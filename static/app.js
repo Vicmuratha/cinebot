@@ -68,6 +68,66 @@ document.addEventListener("DOMContentLoaded", () => {
         themeIcon.className = isLight ? "fa-solid fa-moon" : "fa-solid fa-sun";
     });
 
+    // ─── Watch History / Continue Watching ───
+    const continueSection = document.getElementById("continue-section");
+    const continueRow     = document.getElementById("continue-row");
+
+    function getHistory() { return JSON.parse(localStorage.getItem("watchHistory") || "[]"); }
+
+    function saveToHistory(entry) {
+        let hist = getHistory().filter(h => !(h.id === entry.id && h.type === entry.type));
+        hist.unshift(entry);
+        hist = hist.slice(0, 12);
+        localStorage.setItem("watchHistory", JSON.stringify(hist));
+        renderContinueRow();
+    }
+
+    function renderContinueRow() {
+        const hist = getHistory();
+        if (!hist.length) { continueSection.style.display = "none"; return; }
+        continueSection.style.display = "block";
+        continueRow.innerHTML = "";
+        hist.forEach(h => {
+            const card = document.createElement("div");
+            card.className = "continue-card";
+            if (h.backdrop) {
+                const img = document.createElement("img");
+                img.src = h.backdrop; img.alt = h.title; img.loading = "lazy";
+                card.appendChild(img);
+            } else {
+                const ph = document.createElement("div");
+                ph.className = "continue-card-ph";
+                ph.innerHTML = '<i class="fa-solid fa-film"></i>';
+                card.appendChild(ph);
+            }
+            const overlay = document.createElement("div");
+            overlay.className = "continue-play-overlay";
+            overlay.innerHTML = '<i class="fa-solid fa-play"></i>';
+            card.appendChild(overlay);
+            const info = document.createElement("div");
+            info.className = "continue-card-info";
+            const t = document.createElement("div");
+            t.className = "continue-card-title"; t.textContent = h.title;
+            const s = document.createElement("div");
+            s.className = "continue-card-sub";
+            s.textContent = h.type === "tv" ? `S${h.season} E${h.episode}` : (h.year || "");
+            info.append(t, s);
+            card.appendChild(info);
+            card.addEventListener("click", () => {
+                openPlayer(h.id, h.title, h.quality, h.backdrop, h.type, h.season, h.episode);
+            });
+            continueRow.appendChild(card);
+        });
+    }
+
+    document.getElementById("clear-history").addEventListener("click", () => {
+        localStorage.removeItem("watchHistory");
+        renderContinueRow();
+        showToast("Watch history cleared");
+    });
+
+    renderContinueRow();
+
     // ─── Watchlist ───
     function getWatchlist() { return JSON.parse(localStorage.getItem("watchlist") || "[]"); }
     function isInWatchlist(id) { return getWatchlist().some(m => m.id === id); }
@@ -673,7 +733,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 80);
     }
 
-    function openPlayer(itemId, title, quality, backdropUrl, type) {
+    function openPlayer(itemId, title, quality, backdropUrl, type, season = 1, episode = 1) {
         currentItemId   = itemId;
         currentItemType = type || "movie";
         activeSource    = 0;
@@ -684,12 +744,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Show/hide episode picker
         if (currentItemType === "tv") {
-            playerSeason.value  = 1;
-            playerEpisode.value = 1;
+            playerSeason.value  = season;
+            playerEpisode.value = episode;
             playerEpPicker.style.display = "flex";
         } else {
             playerEpPicker.style.display = "none";
         }
+
+        // Save to watch history
+        saveToHistory({ id: itemId, type: currentItemType, title, quality, backdrop: backdropUrl, season, episode });
 
         // Quality badge
         const qMap = { hd: ["HD","q-hd"], ts: ["HD-TS","q-ts"], cam: ["CAM","q-cam"], soon: ["Soon","q-soon"] };

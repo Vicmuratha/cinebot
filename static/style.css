@@ -290,6 +290,65 @@ body.light-mode .controls-bar { background: rgba(245, 244, 252, 0.92); }
 .genre-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 .my-list-pill i { margin-right: 3px; font-size: 0.6rem; }
 
+/* ─── Continue Watching ─── */
+.continue-section {
+    padding: 1.2rem 5% 0.5rem;
+    max-width: 1700px; margin: 0 auto;
+}
+.continue-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+.continue-title {
+    font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 2px; color: var(--muted);
+    display: flex; align-items: center; gap: 0.5rem;
+}
+.continue-title i { color: var(--accent); }
+.clear-history-btn {
+    background: none; border: 1px solid var(--border); border-radius: 6px;
+    color: var(--muted); font-size: 0.67rem; font-family: inherit;
+    padding: 3px 10px; cursor: pointer; transition: all 0.2s;
+}
+.clear-history-btn:hover { border-color: #f87171; color: #f87171; }
+.continue-row {
+    display: flex; gap: 0.65rem; overflow-x: auto;
+    scrollbar-width: none; padding-bottom: 4px;
+}
+.continue-row::-webkit-scrollbar { display: none; }
+.continue-card {
+    flex-shrink: 0; width: 140px; cursor: pointer;
+    position: relative; border-radius: 8px; overflow: hidden;
+    transition: transform 0.2s var(--ease);
+    background: var(--surface);
+}
+.continue-card:hover { transform: translateY(-4px); }
+.continue-card img {
+    width: 140px; height: 79px; object-fit: cover; display: block;
+    background: var(--skel-base);
+}
+.continue-card-ph {
+    width: 140px; height: 79px;
+    background: linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted); font-size: 1.2rem;
+}
+.continue-card-info { padding: 0.4rem 0.5rem 0.5rem; }
+.continue-card-title {
+    font-size: 0.68rem; font-weight: 600; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-bottom: 2px;
+}
+.continue-card-sub { font-size: 0.6rem; color: var(--muted); }
+.continue-play-overlay {
+    position: absolute; inset: 0; top: auto; height: 79px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.45); opacity: 0;
+    transition: opacity 0.18s;
+}
+.continue-card:hover .continue-play-overlay { opacity: 1; }
+.continue-play-overlay i { color: #fff; font-size: 1.5rem; }
+
 /* ─── Main Grid ─── */
 main { padding: 2rem 5% 5rem; max-width: 1700px; margin: 0 auto; }
 .results-grid {
