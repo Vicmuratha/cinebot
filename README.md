@@ -89,14 +89,14 @@ cinebot/
 
 The player tries up to 4 embed sources in order:
 
-| Button | Source |
-|--------|--------|
-| S1 | vidsrc.cc |
-| S2 | autoembed.co |
-| S3 | vidsrc.pro |
-| S4 | moviesapi.club |
+| Button | Source | Best for |
+|--------|--------|----------|
+| S1 | embed.su | Best overall quality, large library |
+| S2 | vidlink.pro | New releases, fast indexing |
+| S3 | vidsrc.xyz | Wide TV show coverage |
+| S4 | 2embed.cc | Reliable fallback |
 
-If one source doesn't load, click the next button. S1 generally has the best quality for older titles; S2 indexes new releases fastest.
+If one source doesn't load, click the next button.
 
 ---
 
