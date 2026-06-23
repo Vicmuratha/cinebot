@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#08080d">
+    <title>CineBot — Movie Discovery</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="no-hero">
+
+    <header>
+        <div class="logo">
+            <i class="fa-solid fa-film"></i>
+            <span class="logo-cine">Cine</span><span class="logo-bot">Bot</span>
+        </div>
+        <div class="header-actions">
+            <div class="search-container">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" id="search" placeholder="Search movies…" autocomplete="off" spellcheck="false">
+                <button id="search-clear" class="search-clear" aria-label="Clear search" style="display:none;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <button id="theme-toggle" aria-label="Toggle theme"><i class="fa-solid fa-sun"></i></button>
+        </div>
+    </header>
+
+    <!-- Cinematic hero -->
+    <section id="hero" style="display:none;">
+        <img id="hero-img" src="" alt="" class="hero-img">
+        <div class="hero-overlay"></div>
+        <div class="hero-content" id="hero-content"></div>
+    </section>
+
+    <!-- Sticky controls bar (sort tabs + genre pills + year) -->
+    <div class="controls-bar">
+        <div class="controls-top">
+            <!-- Movies / TV toggle -->
+            <div class="type-toggle" id="type-toggle">
+                <button class="type-btn active" data-type="movie">
+                    <i class="fa-solid fa-film"></i> Movies
+                </button>
+                <button class="type-btn" data-type="tv">
+                    <i class="fa-solid fa-tv"></i> TV Shows
+                </button>
+            </div>
+
+            <nav class="sort-tabs" id="sort-tabs" aria-label="Sort options">
+                <button class="sort-tab active" data-sort="popularity.desc">
+                    <i class="fa-solid fa-fire-flame-curved"></i> Popular
+                </button>
+                <button class="sort-tab" data-sort="vote_average.desc">
+                    <i class="fa-solid fa-medal"></i> Top Rated
+                </button>
+                <button class="sort-tab" data-sort="primary_release_date.desc" data-tv-sort="first_air_date.desc">
+                    <i class="fa-solid fa-clapperboard"></i> New Releases
+                </button>
+                <button class="sort-tab" data-sort="trending.day">
+                    <i class="fa-solid fa-bolt-lightning"></i> Today
+                </button>
+                <button class="sort-tab" data-sort="trending.week">
+                    <i class="fa-solid fa-arrow-trend-up"></i> This Week
+                </button>
+            </nav>
+            <div class="year-filter">
+                <div class="year-display">
+                    <i class="fa-regular fa-calendar"></i>
+                    <span id="year-from-val">1990</span>
+                    <span class="year-sep">–</span>
+                    <span id="year-to-val">2026</span>
+                </div>
+                <div class="year-sliders">
+                    <input type="range" id="year-from" min="1950" max="2026" value="1990" aria-label="From year">
+                    <input type="range" id="year-to"   min="1950" max="2026" value="2026" aria-label="To year">
+                </div>
+                <button id="reset-filters" class="reset-btn" title="Reset all filters">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </button>
+            </div>
+        </div>
+        <div class="controls-bottom">
+            <div class="genre-pills-scroll">
+                <div class="genre-pills" id="genre-pills">
+                    <button class="genre-pill active" data-id="">All</button>
+                    <button class="genre-pill my-list-pill" data-id="watchlist">
+                        <i class="fa-solid fa-heart"></i> My List
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <main>
+        <div id="results-grid" class="results-grid"></div>
+        <div id="load-more-wrap" class="load-more-wrap">
+            <button id="load-more-btn" class="load-more-btn">
+                <i class="fa-solid fa-chevron-down"></i> Load More
+            </button>
+        </div>
+    </main>
+
+    <!-- Movie detail modal -->
+    <div id="movie-modal" class="modal">
+        <div class="modal-content">
+            <button class="close-btn" aria-label="Close">&times;</button>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Streaming Player Overlay -->
+    <div id="player-overlay" class="player-overlay">
+        <div id="player-bg" class="player-bg"></div>
+        <div class="player-shell">
+            <div class="player-header">
+                <div class="player-header-left">
+                    <span id="player-title" class="player-title"></span>
+                    <span id="player-quality" class="player-quality-badge" style="display:none;"></span>
+                </div>
+                <div id="player-ep-picker" class="player-ep-picker" style="display:none;">
+                    <label class="ep-label">S
+                        <input id="player-season" class="ep-input" type="number" min="1" value="1">
+                    </label>
+                    <label class="ep-label">E
+                        <input id="player-episode" class="ep-input" type="number" min="1" value="1">
+                    </label>
+                    <button id="player-ep-go" class="ep-go-btn">Go</button>
+                </div>
+                <div class="player-sources">
+                    <button class="player-src-btn active" title="vidsrc.cc">S1</button>
+                    <button class="player-src-btn" title="autoembed.co">S2</button>
+                    <button class="player-src-btn" title="vidsrc.pro">S3</button>
+                    <button class="player-src-btn" title="moviesapi.club">S4</button>
+                </div>
+                <button id="player-close" class="player-close" aria-label="Close player">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div id="player-hint" class="player-hint" style="display:none;"></div>
+            <div class="player-frame-wrap">
+                <iframe id="player-iframe" class="player-iframe"
+                    allowfullscreen
+                    allow="autoplay; fullscreen; picture-in-picture"
+                    referrerpolicy="no-referrer"
+                    src=""></iframe>
+            </div>
+        </div>
+    </div>
+
+    <button id="scroll-top" class="scroll-top-btn" aria-label="Back to top" style="display:none;">
+        <i class="fa-solid fa-arrow-up"></i>
+    </button>
+    <div id="toast-container"></div>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
