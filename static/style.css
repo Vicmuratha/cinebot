@@ -690,11 +690,34 @@ body.light-mode .genre-tag {
 .modal-overview {
     font-size: 0.84rem; color: var(--muted); line-height: 1.85; margin-bottom: 1.75rem;
 }
-.modal-cast { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 1.75rem; }
+.modal-cast { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1.75rem; }
 .cast-member {
     background: var(--surface2); border: 1px solid var(--border);
-    padding: 4px 10px; font-size: 0.71rem; border-radius: 4px; color: var(--text);
+    padding: 4px 8px 4px 4px; font-size: 0.71rem; border-radius: 20px; color: var(--text);
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    cursor: pointer; font-family: inherit; transition: border-color 0.15s, background 0.15s;
 }
+.cast-member:hover { border-color: var(--accent); background: var(--accent-dim); }
+.cast-avatar { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; display: block; }
+.cast-avatar-ph { width: 26px; height: 26px; border-radius: 50%; background: var(--skel-base); display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:0.65rem; }
+
+/* ── Actor page ── */
+.actor-page { padding: 0.5rem; }
+.actor-header { display: flex; gap: 1rem; margin-bottom: 1.25rem; }
+.actor-photo { width: 90px; height: 120px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
+.actor-info { flex: 1; min-width: 0; }
+.actor-name { font-size: 1.2rem; font-weight: 700; margin: 0 0 0.3rem; }
+.actor-meta { font-size: 0.72rem; color: var(--muted); margin: 0 0 0.5rem; }
+.actor-bio { font-size: 0.75rem; color: var(--muted); line-height: 1.6; margin: 0; }
+.actor-filmography-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 0.5rem; }
+.actor-filmography { display: flex; gap: 0.5rem; overflow-x: auto; scrollbar-width: thin; scrollbar-color: var(--border) transparent; padding-bottom: 4px; }
+.actor-filmography::-webkit-scrollbar { height: 4px; }
+.actor-filmography::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.actor-film-card { flex-shrink: 0; width: 80px; cursor: pointer; }
+.actor-film-card img { width: 80px; height: 120px; object-fit: cover; border-radius: 6px; display: block; transition: opacity 0.15s; }
+.actor-film-card img:hover { opacity: 0.8; }
+.actor-film-ph { width: 80px; height: 120px; border-radius: 6px; background: var(--skel-base); }
+.actor-film-card span { display: block; font-size: 0.65rem; color: var(--muted); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ─── TV Episode Browser ─── */
 .ep-browser { width: 100%; }

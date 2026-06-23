@@ -119,5 +119,12 @@ def get_season(tv_id, season_num):
 def similar_tv(tv_id):
     return jsonify({"movies": tmdb_service.similar_tv(tv_id)}), 200
 
+@app.route("/person/<int:person_id>", methods=["GET"])
+def get_person(person_id):
+    person = tmdb_service.get_person(person_id)
+    if person:
+        return jsonify(person), 200
+    return jsonify({"error": "Person not found"}), 404
+
 if __name__ == "__main__":
     app.run(debug=True, use_reloader=False)

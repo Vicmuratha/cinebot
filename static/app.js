@@ -877,6 +877,92 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function fetchMovieDetails(id) { fetchDetails(id, contentType); }
 
+    function openActorPage(personId, name) {
+        modalBody.innerHTML = `<div class="modal-loading"><div class="loader"></div></div>`;
+        modal.style.display = "flex";
+        document.body.style.overflow = "hidden";
+
+        fetch(`/person/${personId}`)
+            .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+            .then(p => {
+                modalBody.innerHTML = "";
+
+                const wrap = document.createElement("div");
+                wrap.className = "actor-page";
+
+                // Header
+                const header = document.createElement("div");
+                header.className = "actor-header";
+
+                if (p.profile_path) {
+                    const img = document.createElement("img");
+                    img.src = `https://image.tmdb.org/t/p/w185${p.profile_path}`;
+                    img.alt = p.name; img.className = "actor-photo";
+                    header.appendChild(img);
+                }
+
+                const info = document.createElement("div");
+                info.className = "actor-info";
+                const nameEl = document.createElement("h2");
+                nameEl.className = "actor-name";
+                nameEl.textContent = p.name;
+                info.appendChild(nameEl);
+                if (p.birthday) {
+                    const bday = document.createElement("p");
+                    bday.className = "actor-meta";
+                    bday.textContent = `Born ${p.birthday}` + (p.place_of_birth ? ` · ${p.place_of_birth}` : "");
+                    info.appendChild(bday);
+                }
+                if (p.biography) {
+                    const bio = document.createElement("p");
+                    bio.className = "actor-bio";
+                    bio.textContent = p.biography.length > 400 ? p.biography.slice(0, 400) + "…" : p.biography;
+                    info.appendChild(bio);
+                }
+                header.appendChild(info);
+                wrap.appendChild(header);
+
+                // Filmography
+                const credits = [...(p.movie_credits?.cast || []), ...(p.tv_credits?.cast || [])]
+                    .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
+                    .slice(0, 20);
+
+                if (credits.length) {
+                    const filmLabel = document.createElement("h3");
+                    filmLabel.className = "actor-filmography-label";
+                    filmLabel.textContent = "Known For";
+                    wrap.appendChild(filmLabel);
+
+                    const row = document.createElement("div");
+                    row.className = "actor-filmography";
+                    credits.forEach(c => {
+                        const card = document.createElement("div");
+                        card.className = "actor-film-card";
+                        const itemType = c.media_type || (c.first_air_date ? "tv" : "movie");
+                        if (c.poster_path) {
+                            const img = document.createElement("img");
+                            img.src = `https://image.tmdb.org/t/p/w185${c.poster_path}`;
+                            img.alt = c.title || c.name; img.loading = "lazy";
+                            card.appendChild(img);
+                        } else {
+                            const ph = document.createElement("div");
+                            ph.className = "actor-film-ph";
+                            card.appendChild(ph);
+                        }
+                        const titleEl = document.createElement("span");
+                        titleEl.textContent = c.title || c.name || "";
+                        card.appendChild(titleEl);
+                        card.addEventListener("click", () => fetchDetails(c.id, itemType));
+                        row.appendChild(card);
+                    });
+                    wrap.appendChild(row);
+                }
+
+                modalBody.appendChild(wrap);
+            })
+            .catch(() => { modalBody.innerHTML = '<p class="modal-error">Could not load actor info.</p>'; });
+    }
+
     function fetchDetails(id, type) {
         modalBody.innerHTML = `<div class="modal-loading"><div class="loader"></div></div>`;
         modal.style.display = "flex";
@@ -1112,8 +1198,24 @@ document.addEventListener("DOMContentLoaded", () => {
                 const castDiv = document.createElement("div");
                 castDiv.className = "modal-cast";
                 castList.forEach(a => {
-                    const c = document.createElement("span");
-                    c.className = "cast-member"; c.textContent = a.name;
+                    const c = document.createElement("button");
+                    c.className = "cast-member";
+                    if (a.profile_path) {
+                        const img = document.createElement("img");
+                        img.src = `https://image.tmdb.org/t/p/w185${a.profile_path}`;
+                        img.alt = a.name; img.loading = "lazy";
+                        img.className = "cast-avatar";
+                        c.appendChild(img);
+                    } else {
+                        const av = document.createElement("div");
+                        av.className = "cast-avatar cast-avatar-ph";
+                        av.innerHTML = '<i class="fa-solid fa-user"></i>';
+                        c.appendChild(av);
+                    }
+                    const nameEl = document.createElement("span");
+                    nameEl.textContent = a.name;
+                    c.appendChild(nameEl);
+                    c.addEventListener("click", () => openActorPage(a.id, a.name));
                     castDiv.appendChild(c);
                 });
                 addSection("Cast", castDiv);

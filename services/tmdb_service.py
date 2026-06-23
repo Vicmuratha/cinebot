@@ -182,3 +182,14 @@ class TMDBService:
         except Exception as e:
             print(f"Error fetching similar TV: {e}")
             return []
+
+    def get_person(self, person_id):
+        try:
+            data = _cached_get(
+                f"{self.base_url}/person/{person_id}",
+                {"api_key": self.api_key, "append_to_response": "movie_credits,tv_credits"}
+            )
+            return data
+        except Exception as e:
+            print(f"Error fetching person: {e}")
+            return None
