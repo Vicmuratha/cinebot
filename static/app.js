@@ -1231,4 +1231,39 @@ document.addEventListener("DOMContentLoaded", () => {
     const sharedType = urlParams.get("type") || "movie";
     if (sharedId) fetchDetails(parseInt(sharedId), sharedType);
 
+    // ─── Keyboard Shortcuts ───
+    document.addEventListener("keydown", e => {
+        const tag = document.activeElement.tagName;
+        const typing = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+
+        // Escape — close player → trailer → modal
+        if (e.key === "Escape") {
+            if (playerOverlay.classList.contains("open")) { closePlayer(); return; }
+            if (document.getElementById("trailer-modal").classList.contains("open")) { closeTrailer(); return; }
+            if (modal.classList.contains("open")) { closeModal(); return; }
+        }
+
+        // / — focus search
+        if (e.key === "/" && !typing) { e.preventDefault(); searchInput.focus(); return; }
+
+        // Only remaining shortcuts apply when player is open and not typing
+        if (!playerOverlay.classList.contains("open") || typing) return;
+
+        // 1–4 switch source
+        if (e.key >= "1" && e.key <= "4") {
+            const idx = parseInt(e.key) - 1;
+            const srcBtns = document.querySelectorAll(".player-src-btn");
+            if (srcBtns[idx]) srcBtns[idx].click();
+            return;
+        }
+
+        // F — fullscreen the iframe
+        if (e.key === "f" || e.key === "F") {
+            const iframe = document.getElementById("player-iframe");
+            if (iframe.requestFullscreen) iframe.requestFullscreen();
+            else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
+            return;
+        }
+    });
+
 });
