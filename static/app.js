@@ -9,6 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let isLoadingMore   = false;
     let isSearchMode    = false;
     let isWatchlistMode = false;
+    let isTrendingMode  = false;
     let contentType     = "movie";  // "movie" | "tv"
     let filters = { genre_id: "", year_from: "1990", year_to: "2026", sort_by: "popularity.desc" };
 
@@ -480,7 +481,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ─── Card factory ───
-    function createCard(movie, index) {
+    function createCard(movie, index, showRank = false) {
         const poster = movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : null;
         const year   = movie.release_date ? movie.release_date.split("-")[0] : "";
         const score  = movie.vote_average || 0;
@@ -488,6 +489,13 @@ document.addEventListener("DOMContentLoaded", () => {
         const card = document.createElement("div");
         card.className = "movie-card";
         card.style.animationDelay = `${index * 0.04}s`;
+
+        if (showRank) {
+            const rank = document.createElement("div");
+            rank.className = "card-rank";
+            rank.textContent = index + 1;
+            card.appendChild(rank);
+        }
 
         if (poster) {
             const img = document.createElement("img");
@@ -565,13 +573,13 @@ document.addEventListener("DOMContentLoaded", () => {
         resultsGrid.innerHTML = "";
         if (!movies || !movies.length) { showError("No movies found. Try different filters."); return; }
         renderHero(movies);
-        movies.forEach((m, i) => resultsGrid.appendChild(createCard(m, i)));
+        movies.forEach((m, i) => resultsGrid.appendChild(createCard(m, i, isTrendingMode && i < 10)));
         loadMoreWrap.style.display = movies.length >= 20 ? "flex" : "none";
     }
 
     function appendMovies(movies) {
         const offset = resultsGrid.querySelectorAll(".movie-card:not(.skeleton-card)").length;
-        movies.forEach((m, i) => resultsGrid.appendChild(createCard(m, offset + i)));
+        movies.forEach((m, i) => resultsGrid.appendChild(createCard(m, offset + i, isTrendingMode && (offset + i) < 10)));
         loadMoreWrap.style.display = movies.length >= 20 ? "flex" : "none";
         isLoadingMore = false;
         loadMoreBtn.classList.remove("loading");
@@ -593,7 +601,8 @@ document.addEventListener("DOMContentLoaded", () => {
         isWatchlistMode = false;
         if (reset) { currentPage = 1; showSkeletons(10); }
 
-        const isTrending = filters.sort_by.startsWith("trending.");
+        isTrendingMode = filters.sort_by.startsWith("trending.");
+        const isTrending = isTrendingMode;
         const base       = contentType === "tv" ? "/tv" : "";
         let fetchPromise;
 
