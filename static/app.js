@@ -539,6 +539,25 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 450);
     });
 
+    // ─── Trailer modal ───
+    const trailerModal  = document.getElementById("trailer-modal");
+    const trailerIframe = document.getElementById("trailer-iframe");
+    const trailerClose  = document.getElementById("trailer-close");
+
+    function openTrailer(key) {
+        trailerIframe.src = `https://www.youtube.com/embed/${key}?autoplay=1`;
+        trailerModal.classList.add("open");
+        document.body.style.overflow = "hidden";
+    }
+    function closeTrailer() {
+        trailerModal.classList.remove("open");
+        trailerIframe.src = "";
+        document.body.style.overflow = "";
+    }
+    trailerClose.addEventListener("click", closeTrailer);
+    trailerModal.addEventListener("click", e => { if (e.target === trailerModal) closeTrailer(); });
+    window.addEventListener("keydown", e => { if (e.key === "Escape" && trailerModal.classList.contains("open")) closeTrailer(); });
+
     // ─── Player ───
     const playerOverlay  = document.getElementById("player-overlay");
     const playerBg       = document.getElementById("player-bg");
@@ -914,14 +933,12 @@ document.addEventListener("DOMContentLoaded", () => {
             watchBtn.addEventListener("click", () => openPlayer(movie.id, title, quality, backdrop, type));
             btnRow.appendChild(watchBtn);
 
-            // Trailer button
+            // Trailer button — plays in-app
             if (trailer) {
-                const btn = document.createElement("a");
+                const btn = document.createElement("button");
                 btn.className = "trailer-btn";
-                btn.href = `https://www.youtube.com/watch?v=${trailer.key}`;
-                btn.target = "_blank"; btn.rel = "noopener noreferrer";
-                btn.innerHTML = '<i class="fa-brands fa-youtube"></i>';
-                btn.appendChild(document.createTextNode(" Trailer"));
+                btn.innerHTML = '<i class="fa-brands fa-youtube"></i> Trailer';
+                btn.addEventListener("click", () => { closeModal(); openTrailer(trailer.key); });
                 btnRow.appendChild(btn);
             }
 

@@ -672,6 +672,37 @@ body.light-mode .genre-tag {
 }
 body.light-mode .toast { background: rgba(14,14,28,0.88); border-color: transparent; }
 
+/* ─── Trailer Modal ─── */
+.trailer-modal {
+    display: none; position: fixed; inset: 0; z-index: 8500;
+    background: rgba(3,3,10,0.92);
+    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+    align-items: center; justify-content: center; padding: 1.5rem;
+}
+.trailer-modal.open { display: flex; animation: fadeIn 0.22s ease; }
+.trailer-shell {
+    position: relative; width: 100%; max-width: 900px;
+    border-radius: 14px; overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(167,139,250,0.15), 0 40px 100px rgba(0,0,0,0.85);
+    animation: scaleIn 0.22s var(--ease);
+}
+.trailer-frame-wrap { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; }
+.trailer-iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: none; }
+.trailer-close {
+    position: absolute; top: 0.6rem; right: 0.6rem; z-index: 10;
+    width: 34px; height: 34px; border-radius: 50%;
+    background: rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.15);
+    color: #fff; font-size: 0.9rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, transform 0.15s;
+}
+.trailer-close:hover { background: rgba(0,0,0,0.95); transform: rotate(90deg); }
+@media (max-width: 640px) {
+    .trailer-modal { padding: 0; }
+    .trailer-shell { border-radius: 0; max-width: 100%; }
+    .trailer-frame-wrap { aspect-ratio: 16/9; }
+}
+
 /* ─── Streaming Player Overlay ─── */
 .player-overlay {
     display: none; position: fixed; inset: 0; z-index: 9000;
