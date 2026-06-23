@@ -183,6 +183,17 @@ class TMDBService:
             print(f"Error fetching similar TV: {e}")
             return []
 
+    def get_collection(self, collection_id):
+        try:
+            data = _cached_get(
+                f"{self.base_url}/collection/{collection_id}",
+                {"api_key": self.api_key}
+            )
+            return data
+        except Exception as e:
+            print(f"Error fetching collection: {e}")
+            return None
+
     def get_person(self, person_id):
         try:
             data = _cached_get(

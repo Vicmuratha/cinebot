@@ -997,10 +997,11 @@ document.addEventListener("DOMContentLoaded", () => {
             const director   = !isTV ? ((movie.credits?.crew || []).find(c => c.job === "Director")?.name || "") : "";
             const creator    = isTV  ? (movie.created_by || []).map(c => c.name).join(", ") : "";
             const rdResults  = movie.release_dates?.results || [];
-            const quality    = qualityFromDate(rawDate, rdResults);
-            const castList   = (movie.credits?.cast || []).slice(0, 8);
-            const trailer    = (movie.videos?.results || []).find(v => v.type === "Trailer" && v.site === "YouTube");
-            const similar    = (sim.movies || []).slice(0, 8).map(normalizeItem);
+            const quality       = qualityFromDate(rawDate, rdResults);
+            const castList      = (movie.credits?.cast || []).slice(0, 8);
+            const trailer       = (movie.videos?.results || []).find(v => v.type === "Trailer" && v.site === "YouTube");
+            const similar       = (sim.movies || []).slice(0, 8).map(normalizeItem);
+            const collectionId  = !isTV ? movie.belongs_to_collection?.id : null;
 
             // Certification (age rating)
             let cert = "";
@@ -1322,6 +1323,46 @@ document.addEventListener("DOMContentLoaded", () => {
                     simRow.appendChild(card);
                 });
                 addSection("More Like This", simRow);
+            }
+
+            // ── Franchise / Collection ──
+            if (collectionId) {
+                fetch(`/collection/${collectionId}`)
+                    .then(r => r.json())
+                    .then(col => {
+                        const parts = (col.parts || []).sort((a, b) => (a.release_date || "").localeCompare(b.release_date || ""));
+                        if (!parts.length) return;
+                        const colRow = document.createElement("div");
+                        colRow.className = "similar-row";
+                        parts.forEach(p => {
+                            const card = document.createElement("div");
+                            card.className = "similar-card";
+                            if (p.poster_path) {
+                                const img = document.createElement("img");
+                                img.src = `https://image.tmdb.org/t/p/w185${p.poster_path}`;
+                                img.alt = p.title; img.loading = "lazy";
+                                card.appendChild(img);
+                            } else {
+                                const ph = document.createElement("div");
+                                ph.className = "similar-card-placeholder";
+                                card.appendChild(ph);
+                            }
+                            const sp = document.createElement("span");
+                            sp.textContent = p.title;
+                            card.appendChild(sp);
+                            card.addEventListener("click", () => fetchDetails(p.id, "movie"));
+                            colRow.appendChild(card);
+                        });
+                        const colSection = document.createElement("div");
+                        colSection.className = "modal-section";
+                        const lbl = document.createElement("h4");
+                        lbl.className = "modal-section-label";
+                        lbl.textContent = col.name || "The Collection";
+                        colSection.appendChild(lbl);
+                        colSection.appendChild(colRow);
+                        body.appendChild(colSection);
+                    })
+                    .catch(() => {});
             }
 
             scroll.appendChild(body);
