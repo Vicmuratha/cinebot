@@ -31,6 +31,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const genrePills   = document.getElementById("genre-pills");
     const searchClear  = document.getElementById("search-clear");
     const scrollTopBtn = document.getElementById("scroll-top");
+    const searchSuggestions = document.getElementById("search-suggestions");
 
     // ─── Scroll header ───
     const headerEl = document.querySelector("header");
@@ -127,6 +128,61 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     renderContinueRow();
+
+    // ─── Recent Searches ───
+    const MAX_RECENT = 8;
+    function getRecentSearches() { return JSON.parse(localStorage.getItem("recentSearches") || "[]"); }
+    function saveRecentSearch(q) {
+        if (!q) return;
+        let list = getRecentSearches().filter(s => s !== q);
+        list.unshift(q);
+        if (list.length > MAX_RECENT) list = list.slice(0, MAX_RECENT);
+        localStorage.setItem("recentSearches", JSON.stringify(list));
+    }
+    function deleteRecentSearch(q) {
+        const list = getRecentSearches().filter(s => s !== q);
+        localStorage.setItem("recentSearches", JSON.stringify(list));
+    }
+    function showSuggestions() {
+        const list = getRecentSearches();
+        if (!list.length) { searchSuggestions.style.display = "none"; return; }
+        searchSuggestions.innerHTML = "";
+        const header = document.createElement("div");
+        header.className = "suggestions-header";
+        header.textContent = "Recent";
+        searchSuggestions.appendChild(header);
+        list.forEach(q => {
+            const row = document.createElement("div");
+            row.className = "suggestion-row";
+            const icon = document.createElement("i");
+            icon.className = "fa-solid fa-clock-rotate-left suggestion-icon";
+            const label = document.createElement("span");
+            label.className = "suggestion-text";
+            label.textContent = q;
+            const del = document.createElement("button");
+            del.className = "suggestion-del";
+            del.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+            del.addEventListener("click", e => {
+                e.stopPropagation();
+                deleteRecentSearch(q);
+                showSuggestions();
+            });
+            row.append(icon, label, del);
+            row.addEventListener("click", () => {
+                searchInput.value = q;
+                searchClear.style.display = "flex";
+                hideSuggestions();
+                searchInput.dispatchEvent(new Event("input"));
+            });
+            searchSuggestions.appendChild(row);
+        });
+        searchSuggestions.style.display = "block";
+    }
+    function hideSuggestions() { searchSuggestions.style.display = "none"; }
+
+    searchInput.addEventListener("focus", () => { if (!searchInput.value) showSuggestions(); });
+    searchInput.addEventListener("blur", () => setTimeout(hideSuggestions, 180));
+    document.addEventListener("click", e => { if (!e.target.closest(".search-container")) hideSuggestions(); });
 
     // ─── Watchlist ───
     function getWatchlist() { return JSON.parse(localStorage.getItem("watchlist") || "[]"); }
@@ -578,7 +634,9 @@ document.addEventListener("DOMContentLoaded", () => {
         clearTimeout(searchTimer);
         const q = e.target.value.trim();
         searchTimer = setTimeout(() => {
-            if (!q) { isSearchMode = false; isWatchlistMode = false; fetchRecommendations(); return; }
+            if (!q) { isSearchMode = false; isWatchlistMode = false; hideSuggestions(); fetchRecommendations(); return; }
+            hideSuggestions();
+            saveRecentSearch(q);
             isSearchMode    = true;
             isWatchlistMode = false;
             setHero(false);
