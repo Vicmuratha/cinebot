@@ -580,7 +580,9 @@ document.addEventListener("DOMContentLoaded", () => {
     let activeSources   = MOVIE_HD_SOURCES;
     let activeSource    = 0;
     let autoSwitchTimer = null;
-    const AUTO_SWITCH_MS = 8000; // ms before trying next source automatically
+    let isPlaying       = false;  // true once we confirm a source is delivering content
+    let iframeSrcTime   = null;   // timestamp when we last set iframe.src
+    const AUTO_SWITCH_MS = 10000; // ms before trying next source
 
     const playerStatusEl = document.getElementById("player-status");
 
@@ -596,25 +598,38 @@ document.addEventListener("DOMContentLoaded", () => {
         autoSwitchTimer = null;
     }
 
+    function markPlaying() {
+        if (isPlaying) return;
+        isPlaying = true;
+        clearAutoSwitch();
+        setSourceStatus(null);
+    }
+
     function scheduleAutoSwitch(fromIndex) {
         clearAutoSwitch();
+        if (isPlaying) return; // Never interrupt active playback
         const next = fromIndex + 1;
         if (next >= srcBtns.length) {
             setSourceStatus("No working source found — try again later.", true);
             return;
         }
         autoSwitchTimer = setTimeout(() => {
-            showToast(`Source ${fromIndex + 1} timed out — trying source ${next + 1}…`);
+            if (isPlaying) return; // Double-check: content may have started while timer ran
+            showToast(`Source ${fromIndex + 1} not responding — trying source ${next + 1}…`);
             loadSource(next);
         }, AUTO_SWITCH_MS);
     }
 
-    // Any postMessage from the iframe means the player is alive — stop auto-switching
+    // iframe load event: error pages load in <2s; a real player takes longer
+    playerIframe.addEventListener("load", () => {
+        if (!playerOverlay.classList.contains("open") || !iframeSrcTime) return;
+        const elapsed = Date.now() - iframeSrcTime;
+        if (elapsed >= 2000) markPlaying(); // Real content — stop switching
+    });
+
+    // postMessage from iframe = player is definitely alive
     window.addEventListener("message", () => {
-        if (playerOverlay.classList.contains("open") && autoSwitchTimer) {
-            clearAutoSwitch();
-            setSourceStatus(null);
-        }
+        if (playerOverlay.classList.contains("open")) markPlaying();
     });
 
     function buildSrc(index) {
@@ -627,11 +642,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function loadSource(index) {
+        isPlaying  = false; // Reset playing flag whenever source changes
         activeSource = index;
         srcBtns.forEach((b, i) => b.classList.toggle("active", i === index));
         setSourceStatus(`Connecting to source ${index + 1} of ${srcBtns.length}…`);
         playerIframe.src = "";
         setTimeout(() => {
+            iframeSrcTime = Date.now();
             playerIframe.src = buildSrc(index);
             scheduleAutoSwitch(index);
         }, 80);
@@ -675,6 +692,7 @@ document.addEventListener("DOMContentLoaded", () => {
             playerHint.style.display = "none";
         }
 
+        isPlaying = false;
         playerOverlay.classList.add("open");
         document.body.style.overflow = "hidden";
         loadSource(0);
