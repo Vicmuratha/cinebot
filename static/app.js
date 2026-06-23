@@ -767,6 +767,16 @@ document.addEventListener("DOMContentLoaded", () => {
             const trailer    = (movie.videos?.results || []).find(v => v.type === "Trailer" && v.site === "YouTube");
             const similar    = (sim.movies || []).slice(0, 8).map(normalizeItem);
 
+            // Certification (age rating)
+            let cert = "";
+            if (!isTV) {
+                const usCerts = rdResults.find(r => r.iso_3166_1 === "US") || rdResults[0];
+                cert = (usCerts?.release_dates || []).find(d => d.certification)?.certification || "";
+            } else {
+                const tvRatings = movie.content_ratings?.results || [];
+                cert = (tvRatings.find(r => r.iso_3166_1 === "US") || tvRatings[0])?.rating || "";
+            }
+
             // TV-specific
             const seasons    = isTV ? movie.number_of_seasons  : null;
             const episodes   = isTV ? movie.number_of_episodes : null;
@@ -865,6 +875,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     chip.className = "modal-chip"; chip.textContent = c;
                     chipsDiv.appendChild(chip);
                 });
+                if (cert) {
+                    const certChip = document.createElement("span");
+                    certChip.className = "modal-chip cert-chip";
+                    certChip.textContent = cert;
+                    chipsDiv.appendChild(certChip);
+                }
                 if (quality && !isTV) {
                     const qChip = document.createElement("span");
                     qChip.className = `modal-chip q-chip q-${quality}`;
