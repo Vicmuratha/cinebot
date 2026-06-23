@@ -1005,6 +1005,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 btnRow.appendChild(btn);
             }
 
+            // Share button
+            const shareBtn = document.createElement("button");
+            shareBtn.className = "share-btn";
+            shareBtn.innerHTML = '<i class="fa-solid fa-share-nodes"></i>';
+            shareBtn.title = "Share";
+            shareBtn.addEventListener("click", () => {
+                const shareUrl = `${location.origin}${location.pathname}?id=${movie.id}&type=${type}`;
+                if (navigator.share) {
+                    navigator.share({ title, url: shareUrl }).catch(() => {});
+                } else {
+                    navigator.clipboard.writeText(shareUrl).then(() => showToast("Link copied!"));
+                }
+            });
+            btnRow.appendChild(shareBtn);
+
             info.appendChild(btnRow);
 
             heroRow.appendChild(info);
@@ -1151,5 +1166,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // ─── Boot ───
     updateWatchlistBadge();
     fetchRecommendations();
+
+    // Auto-open modal from shared link (?id=&type=)
+    const urlParams = new URLSearchParams(location.search);
+    const sharedId   = urlParams.get("id");
+    const sharedType = urlParams.get("type") || "movie";
+    if (sharedId) fetchDetails(parseInt(sharedId), sharedType);
 
 });
