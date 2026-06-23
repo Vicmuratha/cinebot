@@ -1037,6 +1037,85 @@ document.addEventListener("DOMContentLoaded", () => {
                 addSection("Cast", castDiv);
             }
 
+            // ── TV Season / Episode browser ──
+            if (isTV && seasons) {
+                const epSection = document.createElement("div");
+                epSection.className = "ep-browser";
+
+                // Season tabs
+                const seasonTabs = document.createElement("div");
+                seasonTabs.className = "season-tabs";
+                for (let s = 1; s <= seasons; s++) {
+                    const tab = document.createElement("button");
+                    tab.className = "season-tab" + (s === 1 ? " active" : "");
+                    tab.textContent = `Season ${s}`;
+                    tab.dataset.season = s;
+                    seasonTabs.appendChild(tab);
+                }
+                epSection.appendChild(seasonTabs);
+
+                // Episode list container
+                const epList = document.createElement("div");
+                epList.className = "ep-list";
+                epSection.appendChild(epList);
+
+                function loadSeasonEpisodes(seasonNum) {
+                    epList.innerHTML = `<div class="ep-loading"><div class="loader"></div></div>`;
+                    fetch(`/tv/${movie.id}/season/${seasonNum}`)
+                        .then(r => r.json())
+                        .then(data => {
+                            epList.innerHTML = "";
+                            (data.episodes || []).forEach(ep => {
+                                const row = document.createElement("div");
+                                row.className = "ep-row";
+                                const thumb = document.createElement("div");
+                                thumb.className = "ep-thumb";
+                                if (ep.still_path) {
+                                    const img = document.createElement("img");
+                                    img.src = `https://image.tmdb.org/t/p/w185${ep.still_path}`;
+                                    img.alt = ""; img.loading = "lazy";
+                                    thumb.appendChild(img);
+                                } else {
+                                    thumb.innerHTML = '<i class="fa-solid fa-film"></i>';
+                                }
+                                const info = document.createElement("div");
+                                info.className = "ep-info";
+                                const epTitle = document.createElement("span");
+                                epTitle.className = "ep-title";
+                                epTitle.textContent = `${ep.episode_number}. ${ep.name}`;
+                                const epMeta = document.createElement("span");
+                                epMeta.className = "ep-meta";
+                                epMeta.textContent = ep.air_date ? ep.air_date.split("-")[0] : "";
+                                const epOverview = document.createElement("p");
+                                epOverview.className = "ep-overview";
+                                epOverview.textContent = ep.overview || "";
+                                info.append(epTitle, epMeta, epOverview);
+                                const playBtn = document.createElement("button");
+                                playBtn.className = "ep-play-btn";
+                                playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+                                playBtn.addEventListener("click", () => {
+                                    closeModal();
+                                    openPlayer(movie.id, title, quality, backdrop, "tv", seasonNum, ep.episode_number);
+                                });
+                                row.append(thumb, info, playBtn);
+                                epList.appendChild(row);
+                            });
+                        })
+                        .catch(() => { epList.innerHTML = '<p class="ep-error">Could not load episodes.</p>'; });
+                }
+
+                seasonTabs.addEventListener("click", e => {
+                    const tab = e.target.closest(".season-tab");
+                    if (!tab) return;
+                    seasonTabs.querySelectorAll(".season-tab").forEach(t => t.classList.remove("active"));
+                    tab.classList.add("active");
+                    loadSeasonEpisodes(parseInt(tab.dataset.season));
+                });
+
+                loadSeasonEpisodes(1);
+                addSection("Episodes", epSection);
+            }
+
             if (similar.length) {
                 const simRow = document.createElement("div");
                 simRow.className = "similar-row";

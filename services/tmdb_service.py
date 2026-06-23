@@ -176,6 +176,18 @@ class TMDBService:
             print(f"Error fetching TV details: {e}")
             return None
 
+    def get_season(self, tv_id, season_num):
+        try:
+            r = requests.get(
+                f"{self.base_url}/tv/{tv_id}/season/{season_num}",
+                params={"api_key": self.api_key}
+            )
+            r.raise_for_status()
+            return r.json()
+        except Exception as e:
+            print(f"Error fetching season: {e}")
+            return None
+
     def similar_tv(self, tv_id):
         try:
             r = requests.get(
