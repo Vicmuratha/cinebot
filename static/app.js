@@ -579,6 +579,43 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentItemType = "movie";
     let activeSources   = MOVIE_HD_SOURCES;
     let activeSource    = 0;
+    let autoSwitchTimer = null;
+    const AUTO_SWITCH_MS = 8000; // ms before trying next source automatically
+
+    const playerStatusEl = document.getElementById("player-status");
+
+    function setSourceStatus(msg, isError = false) {
+        if (!msg) { playerStatusEl.style.display = "none"; return; }
+        playerStatusEl.className = "player-status" + (isError ? " error" : "");
+        playerStatusEl.innerHTML = `<span class="player-status-dot"></span>${msg}`;
+        playerStatusEl.style.display = "flex";
+    }
+
+    function clearAutoSwitch() {
+        clearTimeout(autoSwitchTimer);
+        autoSwitchTimer = null;
+    }
+
+    function scheduleAutoSwitch(fromIndex) {
+        clearAutoSwitch();
+        const next = fromIndex + 1;
+        if (next >= srcBtns.length) {
+            setSourceStatus("No working source found — try again later.", true);
+            return;
+        }
+        autoSwitchTimer = setTimeout(() => {
+            showToast(`Source ${fromIndex + 1} timed out — trying source ${next + 1}…`);
+            loadSource(next);
+        }, AUTO_SWITCH_MS);
+    }
+
+    // Any postMessage from the iframe means the player is alive — stop auto-switching
+    window.addEventListener("message", () => {
+        if (playerOverlay.classList.contains("open") && autoSwitchTimer) {
+            clearAutoSwitch();
+            setSourceStatus(null);
+        }
+    });
 
     function buildSrc(index) {
         if (currentItemType === "tv") {
@@ -591,9 +628,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function loadSource(index) {
         activeSource = index;
-        playerIframe.src = "";
-        setTimeout(() => { playerIframe.src = buildSrc(index); }, 80);
         srcBtns.forEach((b, i) => b.classList.toggle("active", i === index));
+        setSourceStatus(`Connecting to source ${index + 1} of ${srcBtns.length}…`);
+        playerIframe.src = "";
+        setTimeout(() => {
+            playerIframe.src = buildSrc(index);
+            scheduleAutoSwitch(index);
+        }, 80);
     }
 
     function openPlayer(itemId, title, quality, backdropUrl, type) {
@@ -640,6 +681,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function closePlayer() {
+        clearAutoSwitch();
+        setSourceStatus(null);
         playerOverlay.classList.remove("open");
         playerIframe.src = "";
         document.body.style.overflow = "";
