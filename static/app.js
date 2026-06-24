@@ -490,26 +490,61 @@ document.addEventListener("DOMContentLoaded", () => {
         card.className = "movie-card";
         card.style.animationDelay = `${index * 0.04}s`;
 
+        // Image wrapper (contains poster, rank, badges, quick-action btns)
+        const imgWrap = document.createElement("div");
+        imgWrap.className = "card-img-wrap";
+
         if (showRank) {
             const rank = document.createElement("div");
             rank.className = "card-rank";
             rank.textContent = index + 1;
-            card.appendChild(rank);
+            imgWrap.appendChild(rank);
         }
 
         if (poster) {
             const img = document.createElement("img");
             img.className = "card-poster";
             img.src = poster; img.alt = movie.title; img.loading = "lazy";
-            card.appendChild(img);
+            imgWrap.appendChild(img);
         } else {
             const ph = document.createElement("div");
             ph.className = "card-no-poster";
             ph.textContent = "No Poster";
-            card.appendChild(ph);
+            imgWrap.appendChild(ph);
         }
 
-        // Bottom overlay: title + meta
+        // Quality badge (top-left)
+        const quality = qualityFromDate(movie.release_date, null);
+        if (quality) {
+            const qBadge = document.createElement("div");
+            qBadge.className = `q-badge q-${quality}`;
+            qBadge.textContent = QUALITY_LABELS[quality];
+            imgWrap.appendChild(qBadge);
+        }
+
+        // Heart button
+        const heartBtn = document.createElement("button");
+        heartBtn.className = `heart-btn${isInWatchlist(movie.id) ? " active" : ""}`;
+        heartBtn.innerHTML = isInWatchlist(movie.id)
+            ? '<i class="fa-solid fa-heart"></i>'
+            : '<i class="fa-regular fa-heart"></i>';
+        heartBtn.addEventListener("click", e => { e.stopPropagation(); toggleWatchlist(movie, heartBtn); });
+        imgWrap.appendChild(heartBtn);
+
+        // Quick-play button
+        const playBtn = document.createElement("button");
+        playBtn.className = "card-play-btn";
+        playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+        playBtn.addEventListener("click", e => {
+            e.stopPropagation();
+            const backdropUrl = movie.backdrop_path
+                ? `https://image.tmdb.org/t/p/w1280${movie.backdrop_path}` : null;
+            openPlayer(movie.id, movie.title, quality, backdropUrl, contentType);
+        });
+        imgWrap.appendChild(playBtn);
+        card.appendChild(imgWrap);
+
+        // Info below poster
         const overlay = document.createElement("div");
         overlay.className = "card-overlay";
 
@@ -520,49 +555,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const metaEl = document.createElement("p");
         metaEl.className = "card-meta";
-        const parts = [];
-        if (year) parts.push(year);
-        if (score) {
+        if (year && score) {
             const scoreSpan = document.createElement("span");
             scoreSpan.className = "card-score";
             scoreSpan.textContent = score.toFixed(1);
-            metaEl.appendChild(document.createTextNode(parts.length ? parts[0] + " · " : ""));
+            metaEl.appendChild(document.createTextNode(year + " · "));
             metaEl.appendChild(scoreSpan);
         } else if (year) {
             metaEl.textContent = year;
         }
         overlay.appendChild(metaEl);
-        card.appendChild(overlay);
-
-        // Quality badge (top-left, always visible)
-        const quality = qualityFromDate(movie.release_date, null);
-        if (quality) {
-            const qBadge = document.createElement("div");
-            qBadge.className = `q-badge q-${quality}`;
-            qBadge.textContent = QUALITY_LABELS[quality];
-            card.appendChild(qBadge);
-        }
-
-        // Heart button
-        const heartBtn = document.createElement("button");
-        heartBtn.className = `heart-btn${isInWatchlist(movie.id) ? " active" : ""}`;
-        heartBtn.innerHTML = isInWatchlist(movie.id)
-            ? '<i class="fa-solid fa-heart"></i>'
-            : '<i class="fa-regular fa-heart"></i>';
-        heartBtn.addEventListener("click", e => { e.stopPropagation(); toggleWatchlist(movie, heartBtn); });
-        card.appendChild(heartBtn);
-
-        // Quick-play button — bypasses modal, opens player directly
-        const playBtn = document.createElement("button");
-        playBtn.className = "card-play-btn";
-        playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
-        playBtn.addEventListener("click", e => {
-            e.stopPropagation();
-            const backdropUrl = movie.backdrop_path
-                ? `https://image.tmdb.org/t/p/w1280${movie.backdrop_path}` : null;
-            openPlayer(movie.id, movie.title, quality, backdropUrl, contentType);
-        });
-        card.appendChild(playBtn);
 
         card.addEventListener("click", () => fetchDetails(movie.id, contentType));
         return card;
