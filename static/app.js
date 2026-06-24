@@ -666,7 +666,20 @@ document.addEventListener("DOMContentLoaded", () => {
             .catch(() => showError("Could not load content. Please try again."));
     }
 
-    // ─── Load more ───
+    // ─── Infinite scroll (replaces manual Load More) ───
+    const scrollSentinel = document.getElementById("scroll-sentinel");
+    const infiniteObserver = new IntersectionObserver(entries => {
+        if (!entries[0].isIntersecting) return;
+        if (isLoadingMore || isSearchMode || isWatchlistMode) return;
+        isLoadingMore = true;
+        currentPage++;
+        loadMoreBtn.classList.add("loading");
+        loadMoreBtn.innerHTML = '<i class="fa-solid fa-spinner"></i> Loading…';
+        loadMoreWrap.style.display = "flex";
+        fetchRecommendations(false);
+    }, { rootMargin: "300px" });
+    if (scrollSentinel) infiniteObserver.observe(scrollSentinel);
+
     loadMoreBtn.addEventListener("click", () => {
         if (isLoadingMore) return;
         isLoadingMore = true;
