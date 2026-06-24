@@ -868,7 +868,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (isPlaying) return; // Never interrupt active playback
         const next = fromIndex + 1;
         if (next >= srcBtns.length) {
-            setSourceStatus("No working source found — try again later.", true);
+            setSourceStatus("All sources failed — this title may not be available yet.", true);
+            playerIframe.src = "";
+            showNoSourceState();
             return;
         }
         autoSwitchTimer = setTimeout(() => {
@@ -876,6 +878,29 @@ document.addEventListener("DOMContentLoaded", () => {
             showToast(`Source ${fromIndex + 1} not responding — trying source ${next + 1}…`);
             loadSource(next);
         }, AUTO_SWITCH_MS);
+    }
+
+    // ── No-source fallback overlay ───────────────────────────────────────────
+    function showNoSourceState() {
+        const existing = document.getElementById("player-no-source");
+        if (existing) return;
+        const el = document.createElement("div");
+        el.id = "player-no-source"; el.className = "player-no-source";
+        el.innerHTML = `
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <p>No working source found</p>
+            <span>This title may not be available yet. Try a different source or come back later.</span>
+            <button id="player-retry-btn" class="player-retry-btn">
+                <i class="fa-solid fa-rotate-right"></i> Retry Source 1
+            </button>`;
+        document.querySelector(".player-frame-wrap").appendChild(el);
+        document.getElementById("player-retry-btn").addEventListener("click", () => {
+            el.remove(); loadSource(0);
+        });
+    }
+
+    function hideNoSourceState() {
+        document.getElementById("player-no-source")?.remove();
     }
 
     // iframe load event: error pages load in <2s; a real player takes longer
@@ -902,6 +927,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function loadSource(index) {
         isPlaying  = false; // Reset playing flag whenever source changes
         activeSource = index;
+        hideNoSourceState();
         srcBtns.forEach((b, i) => b.classList.toggle("active", i === index));
         setSourceStatus(`Connecting to source ${index + 1} of ${srcBtns.length}…`);
         playerIframe.src = "";
