@@ -75,6 +75,14 @@ class TMDBService:
             print(f"Error fetching trending: {e}")
             return []
 
+    def now_playing(self):
+        try:
+            data = _cached_get(f"{self.base_url}/movie/now_playing", {"api_key": self.api_key})
+            return data.get("results", [])[:12]
+        except Exception as e:
+            print(f"Error fetching now playing: {e}")
+            return []
+
     def similar_movies(self, movie_id):
         try:
             data = _cached_get(

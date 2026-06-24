@@ -59,6 +59,10 @@ def trending():
     movies = tmdb_service.trending(window, page)
     return jsonify({"movies": movies}), 200
 
+@app.route("/now-playing", methods=["GET"])
+def now_playing():
+    return jsonify({"movies": tmdb_service.now_playing()}), 200
+
 @app.route("/movie/<int:movie_id>/similar", methods=["GET"])
 def similar_movies(movie_id):
     movies = tmdb_service.similar_movies(movie_id)

@@ -286,6 +286,43 @@ body.light-mode .controls-bar { background: rgba(245, 244, 252, 0.92); }
 .my-list-pill i { margin-right: 3px; font-size: 0.6rem; }
 
 /* ─── Continue Watching ─── */
+/* ── In Theatres row ── */
+.now-playing-section {
+    padding: 1.2rem 5% 0.5rem;
+    max-width: 1700px; margin: 0 auto;
+}
+.section-row-header { margin-bottom: 0.75rem; }
+.section-row-title {
+    font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--muted);
+}
+.section-row-title i { color: var(--accent); margin-right: 0.4rem; }
+.now-playing-row {
+    display: flex; gap: 0.65rem; overflow-x: auto; padding-bottom: 0.5rem;
+    scrollbar-width: none;
+}
+.now-playing-row::-webkit-scrollbar { display: none; }
+.np-card {
+    flex: 0 0 90px; cursor: pointer;
+    display: flex; flex-direction: column; gap: 0.35rem;
+    transition: transform 0.2s var(--ease);
+}
+.np-card:hover { transform: translateY(-3px); }
+.np-card img, .np-card-ph {
+    width: 90px; height: 135px; border-radius: 8px;
+    object-fit: cover; background: var(--surface2);
+}
+.np-card-ph {
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted); font-size: 1.2rem;
+}
+.np-card-title {
+    font-size: 0.65rem; font-weight: 500; color: var(--muted);
+    text-align: center; line-height: 1.3;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
 .continue-section {
     padding: 1.2rem 5% 0.5rem;
     max-width: 1700px; margin: 0 auto;

@@ -57,8 +57,42 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // ─── Watch History / Continue Watching ───
-    const continueSection = document.getElementById("continue-section");
-    const continueRow     = document.getElementById("continue-row");
+    const nowPlayingSection = document.getElementById("now-playing-section");
+    const nowPlayingRow     = document.getElementById("now-playing-row");
+    const continueSection   = document.getElementById("continue-section");
+    const continueRow       = document.getElementById("continue-row");
+
+    function loadNowPlaying() {
+        fetch("/now-playing")
+            .then(r => r.ok ? r.json() : { movies: [] })
+            .then(({ movies }) => {
+                if (!movies.length) return;
+                nowPlayingSection.style.display = "block";
+                nowPlayingRow.innerHTML = "";
+                movies.forEach(m => {
+                    const item = document.createElement("div");
+                    item.className = "np-card";
+                    if (m.poster_path) {
+                        const img = document.createElement("img");
+                        img.src = `https://image.tmdb.org/t/p/w185${m.poster_path}`;
+                        img.alt = m.title || ""; img.loading = "lazy";
+                        item.appendChild(img);
+                    } else {
+                        const ph = document.createElement("div");
+                        ph.className = "np-card-ph";
+                        ph.innerHTML = '<i class="fa-solid fa-film"></i>';
+                        item.appendChild(ph);
+                    }
+                    const label = document.createElement("span");
+                    label.className = "np-card-title";
+                    label.textContent = m.title || "";
+                    item.appendChild(label);
+                    item.addEventListener("click", () => fetchDetails(m.id, "movie"));
+                    nowPlayingRow.appendChild(item);
+                });
+            })
+            .catch(() => {});
+    }
 
     function getHistory() { return JSON.parse(localStorage.getItem("watchHistory") || "[]"); }
 
@@ -289,6 +323,9 @@ document.addEventListener("DOMContentLoaded", () => {
             searchClear.style.display = "none";
             loadGenres();
             fetchRecommendations();
+            // "In Theatres" is movies-only
+            if (contentType === "movie") loadNowPlaying();
+            else nowPlayingSection.style.display = "none";
         });
     });
 
@@ -1508,6 +1545,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ─── Boot ───
     updateWatchlistBadge();
     fetchRecommendations();
+    loadNowPlaying();
 
     // Auto-open modal from shared link (?id=&type=)
     const urlParams = new URLSearchParams(location.search);
