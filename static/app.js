@@ -482,7 +482,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ─── Card factory ───
     function createCard(movie, index, showRank = false) {
-        const poster = movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : null;
+        const poster = movie.poster_path ? `https://image.tmdb.org/t/p/w342${movie.poster_path}` : null;
         const year   = movie.release_date ? movie.release_date.split("-")[0] : "";
         const score  = movie.vote_average || 0;
 
@@ -504,7 +504,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (poster) {
             const img = document.createElement("img");
             img.className = "card-poster";
-            img.src = poster; img.alt = movie.title; img.loading = "lazy";
+            img.src = poster; img.alt = movie.title;
+            img.loading = index < 8 ? "eager" : "lazy";
+            img.decoding = "async";
             imgWrap.appendChild(img);
         } else {
             const ph = document.createElement("div");
@@ -982,7 +984,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // Normalize TV fields
             const title    = movie.title || movie.name || "";
             const rawDate  = movie.release_date || movie.first_air_date || "";
-            const poster   = movie.poster_path   ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`   : null;
+            const poster   = movie.poster_path   ? `https://image.tmdb.org/t/p/w342${movie.poster_path}`   : null;
             const backdrop = movie.backdrop_path ? `https://image.tmdb.org/t/p/w1280${movie.backdrop_path}` : null;
             const score    = movie.vote_average || 0;
             const year     = rawDate ? rawDate.split("-")[0] : "";

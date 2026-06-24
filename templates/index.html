@@ -14,6 +14,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Pre-warm TMDB image CDN connection -->
+    <link rel="preconnect" href="https://image.tmdb.org" crossorigin>
+    <link rel="dns-prefetch" href="https://image.tmdb.org">
     <!-- Pre-warm connections to streaming sources so first-load is faster -->
     <link rel="preconnect" href="https://embed.su">
     <link rel="preconnect" href="https://vidlink.pro">
