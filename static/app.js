@@ -56,20 +56,6 @@ document.addEventListener("DOMContentLoaded", () => {
         fetchRecommendations();
     });
 
-    // ─── Theme (dark default, light-mode class = light) ───
-    const themeToggle = document.getElementById("theme-toggle");
-    const themeIcon   = themeToggle.querySelector("i");
-    if (localStorage.getItem("theme") === "light") {
-        document.body.classList.add("light-mode");
-        themeIcon.className = "fa-solid fa-moon";
-    }
-    themeToggle.addEventListener("click", () => {
-        document.body.classList.toggle("light-mode");
-        const isLight = document.body.classList.contains("light-mode");
-        localStorage.setItem("theme", isLight ? "light" : "dark");
-        themeIcon.className = isLight ? "fa-solid fa-moon" : "fa-solid fa-sun";
-    });
-
     // ─── Watch History / Continue Watching ───
     const continueSection = document.getElementById("continue-section");
     const continueRow     = document.getElementById("continue-row");
