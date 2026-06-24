@@ -131,6 +131,9 @@
     <!-- Movie detail modal -->
     <div id="movie-modal" class="modal">
         <div class="modal-content">
+            <button id="modal-back" class="modal-back-btn" style="display:none;" aria-label="Go back">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
             <button class="close-btn" aria-label="Close">&times;</button>
             <div id="modal-body"></div>
         </div>
@@ -164,6 +167,9 @@
                         <input id="player-episode" class="ep-input" type="number" min="1" value="1">
                     </label>
                     <button id="player-ep-go" class="ep-go-btn">Go</button>
+                    <button id="player-next-ep" class="player-next-ep-btn" title="Next Episode">
+                        <i class="fa-solid fa-forward-step"></i>
+                    </button>
                 </div>
                 <div class="player-sources">
                     <button class="player-src-btn active" title="embed.su">S1</button>
@@ -177,6 +183,17 @@
             </div>
             <div id="player-hint" class="player-hint" style="display:none;"></div>
             <div id="player-status" class="player-status" style="display:none;"></div>
+            <!-- Auto-next episode overlay -->
+            <div id="player-autonext" class="player-autonext" style="display:none;">
+                <div class="player-autonext-card">
+                    <div class="autonext-label">Up Next</div>
+                    <div id="autonext-ep-label" class="autonext-ep-label"></div>
+                    <div class="autonext-row">
+                        <button id="autonext-play" class="autonext-play-btn">Play Now</button>
+                        <button id="autonext-cancel" class="autonext-cancel-btn">Cancel <span id="autonext-countdown">15</span></button>
+                    </div>
+                </div>
+            </div>
             <div class="player-frame-wrap">
                 <iframe id="player-iframe" class="player-iframe"
                     allowfullscreen

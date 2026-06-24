@@ -544,6 +544,19 @@ document.addEventListener("DOMContentLoaded", () => {
             openPlayer(movie.id, movie.title, quality, backdropUrl, contentType);
         });
         imgWrap.appendChild(playBtn);
+
+        // Watch progress bar
+        const histEntry = getHistory().find(h => h.id === movie.id);
+        if (histEntry && histEntry.watchedSecs > 60) {
+            const isTVCard = histEntry.type === "tv";
+            const estSecs  = isTVCard ? 45 * 60 : 110 * 60;
+            const pct      = Math.min(95, Math.round((histEntry.watchedSecs / estSecs) * 100));
+            const bar = document.createElement("div");
+            bar.className = "card-progress-bar";
+            bar.style.width = pct + "%";
+            imgWrap.appendChild(bar);
+        }
+
         card.appendChild(imgWrap);
 
         // Info below poster
@@ -734,6 +747,19 @@ document.addEventListener("DOMContentLoaded", () => {
     let iframeSrcTime   = null;   // timestamp when we last set iframe.src
     const AUTO_SWITCH_MS = 10000; // ms before trying next source
 
+    // Auto-next episode (TV)
+    const playerNextEpBtn  = document.getElementById("player-next-ep");
+    const playerAutoNext   = document.getElementById("player-autonext");
+    const autonextEpLabel  = document.getElementById("autonext-ep-label");
+    const autonextCountEl  = document.getElementById("autonext-countdown");
+    const autonextPlayBtn  = document.getElementById("autonext-play");
+    const autonextCancelBtn = document.getElementById("autonext-cancel");
+    let autoNextTimer      = null;
+    let autoNextCountdown  = null;
+
+    // Watch-time tracking (for progress bars on cards)
+    let watchStartTime = null;
+
     const playerStatusEl = document.getElementById("player-status");
 
     function setSourceStatus(msg, isError = false) {
@@ -753,7 +779,51 @@ document.addEventListener("DOMContentLoaded", () => {
         isPlaying = true;
         clearAutoSwitch();
         setSourceStatus(null);
+        if (currentItemType === "tv") scheduleAutoNext();
     }
+
+    // ── Auto-next episode ───────────────────────────────────────────────────
+    function scheduleAutoNext() {
+        clearTimeout(autoNextTimer);
+        autoNextTimer = setTimeout(showAutoNext, 22 * 60 * 1000); // 22 min
+    }
+
+    function showAutoNext() {
+        const s = parseInt(playerSeason.value) || 1;
+        const e = parseInt(playerEpisode.value) || 1;
+        autonextEpLabel.textContent = `Season ${s}, Episode ${e + 1}`;
+        let count = 15;
+        autonextCountEl.textContent = count;
+        playerAutoNext.style.display = "flex";
+        clearInterval(autoNextCountdown);
+        autoNextCountdown = setInterval(() => {
+            count--;
+            autonextCountEl.textContent = count;
+            if (count <= 0) { clearInterval(autoNextCountdown); playNextEpisode(); }
+        }, 1000);
+    }
+
+    function hideAutoNext() {
+        playerAutoNext.style.display = "none";
+        clearInterval(autoNextCountdown);
+        clearTimeout(autoNextTimer);
+    }
+
+    function playNextEpisode() {
+        hideAutoNext();
+        const s = parseInt(playerSeason.value) || 1;
+        const e = parseInt(playerEpisode.value) || 1;
+        playerEpisode.value = e + 1;
+        isPlaying = false;
+        activeSource = 0;
+        loadSource(0);
+        saveToHistory({ id: currentItemId, type: "tv", title: playerTitle.textContent,
+                        quality: heroQuality, backdrop: null, season: s, episode: e + 1 });
+    }
+
+    playerNextEpBtn.addEventListener("click", playNextEpisode);
+    autonextPlayBtn.addEventListener("click", playNextEpisode);
+    autonextCancelBtn.addEventListener("click", hideAutoNext);
 
     function scheduleAutoSwitch(fromIndex) {
         clearAutoSwitch();
@@ -846,6 +916,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         isPlaying = false;
+        watchStartTime = Date.now();
+        hideAutoNext();
+        playerNextEpBtn.style.display = currentItemType === "tv" ? "inline-flex" : "none";
         playerOverlay.classList.add("open");
         document.body.style.overflow = "hidden";
         loadSource(0);
@@ -853,7 +926,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function closePlayer() {
         clearAutoSwitch();
+        hideAutoNext();
         setSourceStatus(null);
+        // Save accumulated watch time to history entry
+        if (watchStartTime) {
+            const secs = Math.round((Date.now() - watchStartTime) / 1000);
+            watchStartTime = null;
+            if (secs > 60) {
+                let hist = getHistory();
+                const entry = hist.find(h => h.id === currentItemId && h.type === currentItemType);
+                if (entry) {
+                    entry.watchedSecs = (entry.watchedSecs || 0) + secs;
+                    localStorage.setItem("watchHistory", JSON.stringify(hist));
+                }
+            }
+        }
         playerOverlay.classList.remove("open");
         playerIframe.src = "";
         document.body.style.overflow = "";
@@ -870,11 +957,35 @@ document.addEventListener("DOMContentLoaded", () => {
     playerOverlay.addEventListener("click", e => { if (e.target === playerOverlay) closePlayer(); });
     window.addEventListener("keydown", e => { if (e.key === "Escape" && playerOverlay.classList.contains("open")) closePlayer(); });
 
-    // ─── Modal ───
+    // ─── Modal + back navigation ───
+    const modalBackBtn = document.getElementById("modal-back");
+    const modalHistory = [];
+
+    function updateModalBackBtn() {
+        modalBackBtn.style.display = modalHistory.length > 1 ? "flex" : "none";
+    }
+
+    function pushModalState(state) {
+        modalHistory.push(state);
+        updateModalBackBtn();
+    }
+
+    function goModalBack() {
+        modalHistory.pop();
+        const prev = modalHistory.pop();
+        if (!prev) { closeModal(); return; }
+        if (prev.kind === "detail") fetchDetails(prev.id, prev.type);
+        else openActorPage(prev.id, prev.name);
+    }
+
     function closeModal() {
         modal.style.display = "none";
         document.body.style.overflow = "";
+        modalHistory.length = 0;
+        updateModalBackBtn();
     }
+
+    modalBackBtn.addEventListener("click", goModalBack);
     closeBtn.addEventListener("click", closeModal);
     modal.addEventListener("click", e => { if (e.target === modal) closeModal(); });
     window.addEventListener("keydown", e => { if (e.key === "Escape" && !playerOverlay.classList.contains("open")) closeModal(); });
@@ -882,6 +993,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function fetchMovieDetails(id) { fetchDetails(id, contentType); }
 
     function openActorPage(personId, name) {
+        pushModalState({ kind: "actor", id: personId, name });
         modalBody.innerHTML = `<div class="modal-loading"><div class="loader"></div></div>`;
         modal.style.display = "flex";
         document.body.style.overflow = "hidden";
@@ -968,6 +1080,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function fetchDetails(id, type) {
+        pushModalState({ kind: "detail", id, type });
         modalBody.innerHTML = `<div class="modal-loading"><div class="loader"></div></div>`;
         modal.style.display = "flex";
         document.body.style.overflow = "hidden";
