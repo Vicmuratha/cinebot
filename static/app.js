@@ -765,6 +765,7 @@ document.addEventListener("DOMContentLoaded", () => {
         isPlaying = true;
         clearAutoSwitch();
         setSourceStatus(null);
+        localStorage.setItem("preferredSource", activeSource);
         if (currentItemType === "tv") scheduleAutoNext();
     }
 
@@ -801,8 +802,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const e = parseInt(playerEpisode.value) || 1;
         playerEpisode.value = e + 1;
         isPlaying = false;
-        activeSource = 0;
-        loadSource(0);
+        const pref = parseInt(localStorage.getItem("preferredSource") || "0");
+        activeSource = pref;
+        loadSource(pref);
         saveToHistory({ id: currentItemId, type: "tv", title: playerTitle.textContent,
                         quality: heroQuality, backdrop: null, season: s, episode: e + 1 });
     }
@@ -863,7 +865,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function openPlayer(itemId, title, quality, backdropUrl, type, season = 1, episode = 1) {
         currentItemId   = itemId;
         currentItemType = type || "movie";
-        activeSource    = 0;
+        activeSource    = parseInt(localStorage.getItem("preferredSource") || "0");
         activeSources   = (quality === "hd") ? MOVIE_HD_SOURCES : MOVIE_CAM_SOURCES;
 
         playerBg.style.backgroundImage = backdropUrl ? `url(${backdropUrl})` : "none";
