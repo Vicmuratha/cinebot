@@ -1229,13 +1229,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 info.appendChild(chipsDiv);
             }
 
-            // Genre tags
+            // Genre tags — clickable to filter browse
             if (movie.genres?.length) {
                 const gDiv = document.createElement("div");
                 gDiv.className = "modal-genres";
                 movie.genres.forEach(g => {
-                    const tag = document.createElement("span");
+                    const tag = document.createElement("button");
                     tag.className = "genre-tag"; tag.textContent = g.name;
+                    tag.addEventListener("click", () => {
+                        closeModal();
+                        filters.genre_id = g.id;
+                        document.querySelectorAll(".genre-pill").forEach(p =>
+                            p.classList.toggle("active", String(p.dataset.id) === String(g.id)));
+                        currentPage = 1;
+                        isSearchMode = false; isWatchlistMode = false; isTrendingMode = false;
+                        fetchRecommendations();
+                    });
                     gDiv.appendChild(tag);
                 });
                 info.appendChild(gDiv);
@@ -1261,6 +1270,24 @@ document.addEventListener("DOMContentLoaded", () => {
                 btn.addEventListener("click", () => { closeModal(); openTrailer(trailer.key); });
                 btnRow.appendChild(btn);
             }
+
+            // Watchlist (heart) button
+            const modalHeart = document.createElement("button");
+            const inList = () => isInWatchlist(movie.id);
+            const updateHeart = () => {
+                modalHeart.className = `modal-heart-btn${inList() ? " active" : ""}`;
+                modalHeart.innerHTML = inList()
+                    ? '<i class="fa-solid fa-heart"></i>'
+                    : '<i class="fa-regular fa-heart"></i>';
+                modalHeart.title = inList() ? "Remove from My List" : "Add to My List";
+            };
+            updateHeart();
+            modalHeart.addEventListener("click", () => {
+                toggleWatchlist({ id: movie.id, title, poster_path: movie.poster_path,
+                    release_date: rawDate, vote_average: score }, modalHeart);
+                updateHeart();
+            });
+            btnRow.appendChild(modalHeart);
 
             // Share button
             const shareBtn = document.createElement("button");

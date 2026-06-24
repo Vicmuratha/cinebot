@@ -656,7 +656,10 @@ body.light-mode .close-btn:hover { background: #fff; }
     background: var(--accent-dim); color: var(--accent);
     padding: 3px 10px; font-size: 0.67rem; border-radius: 100px;
     border: 1px solid rgba(245,158,11,0.2); font-weight: 600;
+    cursor: pointer; transition: background 0.15s, border-color 0.15s;
+    font-family: inherit;
 }
+.genre-tag:hover { background: rgba(245,158,11,0.22); border-color: rgba(245,158,11,0.5); }
 
 .modal-btn-row {
     display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center;
@@ -1059,6 +1062,17 @@ body.light-mode .close-btn:hover { background: #fff; }
     transition: all 0.2s; flex-shrink: 0;
 }
 .share-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+/* Watchlist (heart) button inside modal */
+.modal-heart-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--muted); font-size: 0.88rem; cursor: pointer;
+    transition: all 0.2s; flex-shrink: 0;
+}
+.modal-heart-btn:hover { border-color: #e05; color: #e05; background: rgba(238,0,85,0.1); }
+.modal-heart-btn.active { color: #e05; border-color: rgba(238,0,85,0.4); background: rgba(238,0,85,0.1); }
 
 @keyframes scaleIn {
     from { transform: scale(0.95); opacity: 0; }
