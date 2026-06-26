@@ -744,6 +744,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const playerIframe   = document.getElementById("player-iframe");
     const playerTitle    = document.getElementById("player-title");
     const playerClose    = document.getElementById("player-close");
+    const playerPipBtn   = document.getElementById("player-pip");
     const playerQuality  = document.getElementById("player-quality");
     const playerHint     = document.getElementById("player-hint");
     const playerEpPicker = document.getElementById("player-ep-picker");
@@ -1005,10 +1006,40 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
         }
+        exitPiP();
         playerOverlay.classList.remove("open");
         playerIframe.src = "";
         document.body.style.overflow = "";
     }
+
+    // ── Picture-in-Picture (floating mini-player) ─────────────────────────────
+    let isPiP = false;
+
+    function enterPiP() {
+        isPiP = true;
+        playerOverlay.classList.add("pip-mode");
+        document.body.style.overflow = "";
+        playerPipBtn.innerHTML = '<i class="fa-solid fa-down-left-and-up-right-to-center"></i>';
+        playerPipBtn.title = "Expand";
+    }
+
+    function exitPiP() {
+        if (!isPiP) return;
+        isPiP = false;
+        playerOverlay.classList.remove("pip-mode");
+        if (playerOverlay.classList.contains("open")) document.body.style.overflow = "hidden";
+        playerPipBtn.innerHTML = '<i class="fa-solid fa-up-right-and-down-left-from-center"></i>';
+        playerPipBtn.title = "Picture-in-Picture";
+    }
+
+    playerPipBtn.addEventListener("click", () => { isPiP ? exitPiP() : enterPiP(); });
+
+    // Clicking the mini-player shell (not its buttons) expands it back
+    document.querySelector(".player-shell").addEventListener("click", e => {
+        if (!isPiP) return;
+        if (e.target.closest("button") || e.target.closest("input")) return;
+        exitPiP();
+    });
 
     // Episode picker — Go button or Enter key
     playerEpGo.addEventListener("click", () => loadSource(activeSource));
@@ -1018,8 +1049,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     srcBtns.forEach((btn, i) => btn.addEventListener("click", () => loadSource(i)));
     playerClose.addEventListener("click", closePlayer);
-    playerOverlay.addEventListener("click", e => { if (e.target === playerOverlay) closePlayer(); });
-    window.addEventListener("keydown", e => { if (e.key === "Escape" && playerOverlay.classList.contains("open")) closePlayer(); });
+    playerOverlay.addEventListener("click", e => { if (e.target === playerOverlay && !isPiP) closePlayer(); });
+    window.addEventListener("keydown", e => {
+        if (e.key === "Escape" && playerOverlay.classList.contains("open")) {
+            isPiP ? exitPiP() : closePlayer();
+        }
+        if (e.key === "p" && e.altKey && playerOverlay.classList.contains("open")) {
+            isPiP ? exitPiP() : enterPiP();
+        }
+    });
 
     // ─── Modal + back navigation ───
     const modalBackBtn = document.getElementById("modal-back");
