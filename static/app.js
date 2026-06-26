@@ -1014,9 +1014,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ── Picture-in-Picture (floating mini-player) ─────────────────────────────
     let isPiP = false;
+    const pipShell = document.querySelector(".player-shell");
 
     function enterPiP() {
         isPiP = true;
+        // Reset to default corner position when entering PiP
+        pipShell.style.left = ""; pipShell.style.top = "";
+        pipShell.style.width = ""; pipShell.style.height = "";
         playerOverlay.classList.add("pip-mode");
         document.body.style.overflow = "";
         playerPipBtn.innerHTML = '<i class="fa-solid fa-down-left-and-up-right-to-center"></i>';
@@ -1026,6 +1030,8 @@ document.addEventListener("DOMContentLoaded", () => {
     function exitPiP() {
         if (!isPiP) return;
         isPiP = false;
+        pipShell.style.left = ""; pipShell.style.top = "";
+        pipShell.style.width = ""; pipShell.style.height = "";
         playerOverlay.classList.remove("pip-mode");
         if (playerOverlay.classList.contains("open")) document.body.style.overflow = "hidden";
         playerPipBtn.innerHTML = '<i class="fa-solid fa-up-right-and-down-left-from-center"></i>';
@@ -1034,10 +1040,93 @@ document.addEventListener("DOMContentLoaded", () => {
 
     playerPipBtn.addEventListener("click", () => { isPiP ? exitPiP() : enterPiP(); });
 
-    // Clicking the mini-player shell (not its buttons) expands it back
-    document.querySelector(".player-shell").addEventListener("click", e => {
+    // ── PiP drag ──────────────────────────────────────────────────────────────
+    const pipHeader = document.querySelector(".player-header");
+    let pipDragging = false, pipDX = 0, pipDY = 0;
+
+    function pipStartDrag(clientX, clientY) {
         if (!isPiP) return;
+        const rect = pipShell.getBoundingClientRect();
+        // Switch from bottom/right anchoring to top/left for free positioning
+        pipShell.style.right = "auto"; pipShell.style.bottom = "auto";
+        pipShell.style.left = rect.left + "px";
+        pipShell.style.top  = rect.top  + "px";
+        pipDX = clientX - rect.left;
+        pipDY = clientY - rect.top;
+        pipDragging = true;
+        pipShell.style.transition = "none";
+    }
+    function pipMoveDrag(clientX, clientY) {
+        if (!pipDragging) return;
+        const maxX = window.innerWidth  - pipShell.offsetWidth;
+        const maxY = window.innerHeight - pipShell.offsetHeight;
+        pipShell.style.left = Math.max(0, Math.min(clientX - pipDX, maxX)) + "px";
+        pipShell.style.top  = Math.max(0, Math.min(clientY - pipDY, maxY)) + "px";
+    }
+    function pipEndDrag() { pipDragging = false; pipShell.style.transition = ""; }
+
+    pipHeader.addEventListener("mousedown", e => {
         if (e.target.closest("button") || e.target.closest("input")) return;
+        pipStartDrag(e.clientX, e.clientY);
+        e.preventDefault();
+    });
+    document.addEventListener("mousemove", e => { if (pipDragging) pipMoveDrag(e.clientX, e.clientY); });
+    document.addEventListener("mouseup", pipEndDrag);
+
+    // Touch drag
+    pipHeader.addEventListener("touchstart", e => {
+        if (e.target.closest("button")) return;
+        const t = e.touches[0];
+        pipStartDrag(t.clientX, t.clientY);
+    }, { passive: true });
+    document.addEventListener("touchmove", e => {
+        if (!pipDragging) return;
+        pipMoveDrag(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+    document.addEventListener("touchend", pipEndDrag);
+
+    // ── PiP resize ───────────────────────────────────────────────────────────
+    const pipResizeHandle = document.createElement("div");
+    pipResizeHandle.className = "pip-resize-handle";
+    pipShell.appendChild(pipResizeHandle);
+
+    let pipResizing = false, rStartX = 0, rStartY = 0, rStartW = 0, rStartH = 0;
+
+    function pipStartResize(clientX, clientY) {
+        if (!isPiP) return;
+        pipResizing = true;
+        rStartX = clientX; rStartY = clientY;
+        rStartW = pipShell.offsetWidth; rStartH = pipShell.offsetHeight;
+        pipShell.style.transition = "none";
+    }
+    function pipMoveResize(clientX, clientY) {
+        if (!pipResizing) return;
+        const newW = Math.max(220, rStartW + (clientX - rStartX));
+        const newH = Math.max(160, rStartH + (clientY - rStartY));
+        pipShell.style.width  = newW + "px";
+        pipShell.style.height = newH + "px";
+    }
+    function pipEndResize() { pipResizing = false; pipShell.style.transition = ""; }
+
+    pipResizeHandle.addEventListener("mousedown", e => {
+        pipStartResize(e.clientX, e.clientY);
+        e.preventDefault(); e.stopPropagation();
+    });
+    document.addEventListener("mousemove", e => { if (pipResizing) pipMoveResize(e.clientX, e.clientY); });
+    document.addEventListener("mouseup", pipEndResize);
+
+    pipResizeHandle.addEventListener("touchstart", e => {
+        const t = e.touches[0]; pipStartResize(t.clientX, t.clientY);
+        e.stopPropagation();
+    }, { passive: true });
+    document.addEventListener("touchmove", e => {
+        if (!pipResizing) return; pipMoveResize(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+    document.addEventListener("touchend", pipEndResize);
+
+    // Clicking the mini-player frame (not buttons/inputs) expands back
+    document.querySelector(".player-frame-wrap").addEventListener("click", e => {
+        if (!isPiP || pipDragging || pipResizing) return;
         exitPiP();
     });
 
@@ -1618,6 +1707,20 @@ document.addEventListener("DOMContentLoaded", () => {
         })
         .catch(() => { closeModal(); showToast("Could not load details."); });
     }
+
+    // ─── Logo → home ───
+    document.getElementById("logo-home").addEventListener("click", () => {
+        searchInput.value = "";
+        searchClear.style.display = "none";
+        isSearchMode = false; isWatchlistMode = false; isTrendingMode = false;
+        filters.genre_id = ""; filters.sort_by = "popularity.desc";
+        document.querySelectorAll(".sort-tab").forEach(t => t.classList.toggle("active", t.dataset.sort === "popularity.desc"));
+        document.querySelectorAll(".genre-pill").forEach(p => p.classList.toggle("active", p.dataset.id === ""));
+        currentPage = 1;
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        fetchRecommendations();
+        loadNowPlaying();
+    });
 
     // ─── Boot ───
     updateWatchlistBadge();

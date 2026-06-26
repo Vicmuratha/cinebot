@@ -64,7 +64,11 @@ body.no-hero header { background: var(--bg); border-bottom-color: var(--border);
 .logo {
     display: flex; align-items: center; gap: 0.55rem;
     text-decoration: none; user-select: none;
+    background: none; border: none; cursor: pointer; padding: 0;
 }
+.logo:hover .logo-cine { color: var(--accent); }
+.logo:hover i { transform: scale(1.15); }
+.logo i { transition: transform 0.2s; }
 .logo i { color: var(--accent); font-size: 1rem; }
 .logo-cine {
     font-size: 1rem; font-weight: 800;
@@ -1063,16 +1067,22 @@ body.light-mode .close-btn:hover { background: #fff; }
 .player-overlay.pip-mode .player-shell {
     position: fixed;
     bottom: 1.5rem; right: 1.5rem;
-    width: 320px; max-width: 320px;
+    width: 320px;
+    display: flex; flex-direction: column;
     border-radius: 14px;
     pointer-events: all;
-    cursor: pointer;
+    overflow: hidden;
     box-shadow: 0 8px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(245,158,11,0.25);
+    transition: box-shadow 0.2s;
+}
+.player-overlay.pip-mode .player-shell:hover {
+    box-shadow: 0 12px 50px rgba(0,0,0,0.8), 0 0 0 1px rgba(245,158,11,0.45);
 }
 .player-overlay.pip-mode .player-header {
     padding: 0.4rem 0.5rem; gap: 0.35rem;
-    border-radius: 14px 14px 0 0;
+    cursor: grab; flex-shrink: 0;
 }
+.player-overlay.pip-mode .player-header:active { cursor: grabbing; }
 .player-overlay.pip-mode .player-header-left { flex: 1; min-width: 0; }
 .player-overlay.pip-mode .player-title { font-size: 0.7rem; }
 .player-overlay.pip-mode .player-quality-badge { display: none !important; }
@@ -1081,7 +1091,22 @@ body.light-mode .close-btn:hover { background: #fff; }
 .player-overlay.pip-mode .player-hint { display: none !important; }
 .player-overlay.pip-mode .player-status { display: none !important; }
 .player-overlay.pip-mode .player-autonext { display: none !important; }
-.player-overlay.pip-mode .player-frame-wrap { border-radius: 0 0 14px 14px; }
+.player-overlay.pip-mode .player-frame-wrap {
+    flex: 1; aspect-ratio: unset; min-height: 120px;
+    cursor: pointer;
+}
+
+/* Resize handle — bottom-right corner grip */
+.pip-resize-handle {
+    display: none;
+    position: absolute; bottom: 0; right: 0;
+    width: 20px; height: 20px;
+    cursor: nwse-resize;
+    z-index: 10;
+    background: linear-gradient(135deg, transparent 40%, rgba(245,158,11,0.6) 40%);
+    border-radius: 0 0 14px 0;
+}
+.player-overlay.pip-mode .pip-resize-handle { display: block; }
 
 /* Auto-switch status bar */
 .player-status {
