@@ -185,6 +185,10 @@
                     <button class="player-src-btn" title="vidsrc.xyz">S3</button>
                     <button class="player-src-btn" title="2embed.cc">S4</button>
                 </div>
+                <label id="player-sub-btn" class="player-sub-btn" title="Upload Subtitles (.srt / .vtt)">
+                    <i class="fa-solid fa-closed-captioning"></i>
+                    <input type="file" id="player-sub-input" accept=".srt,.vtt" style="display:none;">
+                </label>
                 <button id="player-pip" class="player-pip-btn" title="Picture-in-Picture">
                     <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
                 </button>
@@ -210,6 +214,20 @@
                     allowfullscreen
                     allow="autoplay; fullscreen; picture-in-picture; encrypted-media; accelerometer; gyroscope"
                     src=""></iframe>
+                <!-- Subtitle overlay rendered above iframe -->
+                <div id="player-subtitles" class="player-subtitles"></div>
+                <!-- Subtitle controls bar (shown when subtitles are loaded) -->
+                <div id="player-sub-controls" class="player-sub-controls" style="display:none;">
+                    <span id="sub-filename" class="sub-filename"></span>
+                    <div class="sub-offset-group">
+                        <button id="sub-offset-minus" class="sub-offset-btn" title="Delay -0.5s">−0.5s</button>
+                        <span id="sub-offset-display" class="sub-offset-display">0.0s</span>
+                        <button id="sub-offset-plus"  class="sub-offset-btn" title="Delay +0.5s">+0.5s</button>
+                    </div>
+                    <button id="sub-remove-btn" class="sub-remove-btn" title="Remove subtitles">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>

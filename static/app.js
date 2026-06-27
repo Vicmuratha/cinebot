@@ -797,6 +797,100 @@ document.addEventListener("DOMContentLoaded", () => {
     // Watch-time tracking (for progress bars on cards)
     let watchStartTime = null;
 
+    // ── Subtitle system ────────────────────────────────────────────────────────
+    let subCues      = [];      // [{start: ms, end: ms, text: "..."}]
+    let subOffsetMs  = 0;       // user-controlled timing offset
+    let subInterval  = null;
+    const subDisplay  = document.getElementById("player-subtitles");
+    const subControls = document.getElementById("player-sub-controls");
+    const subFilename = document.getElementById("sub-filename");
+    const subOffsetEl = document.getElementById("sub-offset-display");
+    const subInput    = document.getElementById("player-sub-input");
+    const subBtn      = document.getElementById("player-sub-btn");
+
+    function parseTimeMs(ts) {
+        // Handles HH:MM:SS,mmm and HH:MM:SS.mmm
+        const [hms, ms = "0"] = ts.trim().split(/[,.]/);
+        const parts = hms.split(":").map(Number);
+        const [h, m, s] = parts.length === 3 ? parts : [0, ...parts];
+        return (h * 3600 + m * 60 + s) * 1000 + parseInt(ms.padEnd(3,"0").slice(0,3), 10);
+    }
+
+    function parseSRT(text) {
+        const cues = [];
+        for (const block of text.trim().split(/\r?\n\s*\r?\n/)) {
+            const lines = block.trim().split(/\r?\n/);
+            const ti = lines.findIndex(l => l.includes("-->"));
+            if (ti === -1) continue;
+            const m = lines[ti].match(/(\d{1,2}:\d{2}:\d{2}[,\.]\d{1,3})\s*-->\s*(\d{1,2}:\d{2}:\d{2}[,\.]\d{1,3})/);
+            if (!m) continue;
+            const txt = lines.slice(ti + 1).join("\n").replace(/<[^>]+>/g, "").trim();
+            if (txt) cues.push({ start: parseTimeMs(m[1]), end: parseTimeMs(m[2]), text: txt });
+        }
+        return cues;
+    }
+
+    function parseVTT(text) {
+        // Strip WEBVTT header and NOTE blocks, then re-use SRT parser
+        const stripped = text
+            .replace(/^WEBVTT[^\n]*\n/, "")
+            .replace(/NOTE[^\n]*\n[\s\S]*?(?=\n\s*\n|$)/g, "");
+        return parseSRT(stripped);
+    }
+
+    function startSubSync() {
+        if (subInterval) clearInterval(subInterval);
+        subInterval = setInterval(() => {
+            if (!watchStartTime || !subCues.length) { subDisplay.innerHTML = ""; return; }
+            const elapsed = Date.now() - watchStartTime + subOffsetMs;
+            const cue = subCues.find(c => elapsed >= c.start && elapsed <= c.end);
+            subDisplay.innerHTML = cue
+                ? `<span>${cue.text.replace(/\n/g, "<br>")}</span>`
+                : "";
+        }, 80);
+    }
+
+    function clearSubs() {
+        subCues = []; subOffsetMs = 0;
+        if (subInterval) { clearInterval(subInterval); subInterval = null; }
+        subDisplay.innerHTML = "";
+        subControls.style.display = "none";
+        subBtn.classList.remove("active");
+        subInput.value = "";
+    }
+
+    subInput.addEventListener("change", () => {
+        const file = subInput.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+            const text = e.target.result;
+            subCues = file.name.toLowerCase().endsWith(".vtt") ? parseVTT(text) : parseSRT(text);
+            if (!subCues.length) { showToast("Could not parse subtitle file"); return; }
+            subOffsetMs = 0;
+            subFilename.textContent = file.name;
+            subOffsetEl.textContent = "0.0s";
+            subControls.style.display = "flex";
+            subBtn.classList.add("active");
+            startSubSync();
+            showToast(`Subtitles loaded — ${subCues.length} lines`);
+        };
+        reader.readAsText(file);
+    });
+
+    document.getElementById("sub-offset-minus").addEventListener("click", () => {
+        subOffsetMs -= 500;
+        subOffsetEl.textContent = (subOffsetMs / 1000).toFixed(1) + "s";
+    });
+    document.getElementById("sub-offset-plus").addEventListener("click", () => {
+        subOffsetMs += 500;
+        subOffsetEl.textContent = (subOffsetMs / 1000).toFixed(1) + "s";
+    });
+    document.getElementById("sub-remove-btn").addEventListener("click", () => {
+        clearSubs();
+        showToast("Subtitles removed");
+    });
+
     const playerStatusEl = document.getElementById("player-status");
 
     function setSourceStatus(msg, isError = false) {
@@ -1007,6 +1101,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
         exitPiP();
+        clearSubs();
         playerOverlay.classList.remove("open");
         playerIframe.src = "";
         document.body.style.overflow = "";
