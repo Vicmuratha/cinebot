@@ -1514,72 +1514,93 @@ document.addEventListener("DOMContentLoaded", () => {
             dlBtn.className = "dl-btn";
             dlBtn.innerHTML = '<i class="fa-solid fa-download"></i>';
             dlBtn.title = "Download";
-            dlBtn.addEventListener("click", () => {
-                // Remove any existing picker
-                document.getElementById("dl-picker")?.remove();
+            dlBtn.addEventListener("click", e => {
+                e.stopPropagation();
+                document.getElementById("dl-overlay")?.remove();
 
-                const picker = document.createElement("div");
-                picker.id = "dl-picker";
-                picker.className = "dl-picker";
+                // Build full-screen overlay with centered card
+                const overlay = document.createElement("div");
+                overlay.id = "dl-overlay";
+                overlay.className = "dl-overlay";
 
-                const label = document.createElement("div");
-                label.className = "dl-picker-label";
-                label.textContent = "Select Resolution";
-                picker.appendChild(label);
+                const card = document.createElement("div");
+                card.className = "dl-card";
+
+                // Title
+                const heading = document.createElement("div");
+                heading.className = "dl-heading";
+                heading.innerHTML = `<i class="fa-solid fa-download"></i> Download`;
+                card.appendChild(heading);
+
+                const sub = document.createElement("div");
+                sub.className = "dl-sub";
+                sub.textContent = title;
+                card.appendChild(sub);
 
                 // TV: season + episode inputs
                 let seasonInput, episodeInput;
                 if (isTV) {
                     const epRow = document.createElement("div");
                     epRow.className = "dl-ep-row";
-                    seasonInput  = document.createElement("input");
+                    const sLabel = document.createElement("label");
+                    sLabel.className = "dl-ep-label";
+                    sLabel.textContent = "Season";
+                    seasonInput = document.createElement("input");
+                    seasonInput.type = "number"; seasonInput.min = "1"; seasonInput.value = "1";
+                    seasonInput.className = "dl-ep-input";
+                    sLabel.appendChild(seasonInput);
+
+                    const eLabel = document.createElement("label");
+                    eLabel.className = "dl-ep-label";
+                    eLabel.textContent = "Episode";
                     episodeInput = document.createElement("input");
-                    [seasonInput, episodeInput].forEach((inp, i) => {
-                        inp.type = "number"; inp.min = "1"; inp.value = "1";
-                        inp.className = "dl-ep-input";
-                        inp.placeholder = i === 0 ? "S" : "E";
-                        epRow.appendChild(inp);
-                    });
-                    picker.appendChild(epRow);
+                    episodeInput.type = "number"; episodeInput.min = "1"; episodeInput.value = "1";
+                    episodeInput.className = "dl-ep-input";
+                    eLabel.appendChild(episodeInput);
+
+                    epRow.appendChild(sLabel);
+                    epRow.appendChild(eLabel);
+                    card.appendChild(epRow);
                 }
+
+                const resLabel = document.createElement("div");
+                resLabel.className = "dl-res-label";
+                resLabel.textContent = "Select quality";
+                card.appendChild(resLabel);
+
+                const resGrid = document.createElement("div");
+                resGrid.className = "dl-res-grid";
 
                 ["1080p", "720p", "480p"].forEach(res => {
                     const btn = document.createElement("button");
                     btn.className = "dl-res-btn";
-                    btn.textContent = res;
+                    const icons = { "1080p": "fa-circle-dot", "720p": "fa-circle-half-stroke", "480p": "fa-circle" };
+                    btn.innerHTML = `<i class="fa-solid ${icons[res]}"></i>${res}`;
                     btn.addEventListener("click", () => {
-                        const qualityParam = res === "1080p" ? "1080" : res === "720p" ? "720" : "480";
                         let url;
                         if (isTV) {
-                            const s = parseInt(seasonInput?.value || 1);
-                            const e = parseInt(episodeInput?.value || 1);
-                            url = `https://dl.vidsrc.vip/tv/${movie.id}/${s}/${e}`;
+                            const s = parseInt(seasonInput?.value || "1");
+                            const ep = parseInt(episodeInput?.value || "1");
+                            url = `https://dl.vidsrc.vip/tv/${movie.id}/${s}/${ep}`;
                         } else {
                             url = `https://dl.vidsrc.vip/movie/${movie.id}`;
                         }
                         window.open(url, "_blank", "noopener");
-                        picker.remove();
+                        overlay.remove();
                     });
-                    picker.appendChild(btn);
+                    resGrid.appendChild(btn);
                 });
+                card.appendChild(resGrid);
 
                 const cancelBtn = document.createElement("button");
                 cancelBtn.className = "dl-cancel-btn";
                 cancelBtn.textContent = "Cancel";
-                cancelBtn.addEventListener("click", () => picker.remove());
-                picker.appendChild(cancelBtn);
+                cancelBtn.addEventListener("click", () => overlay.remove());
+                card.appendChild(cancelBtn);
 
-                // Position picker above the button
-                info.appendChild(picker);
-                // Close when clicking outside
-                setTimeout(() => {
-                    document.addEventListener("click", function handler(e) {
-                        if (!picker.contains(e.target) && e.target !== dlBtn) {
-                            picker.remove();
-                            document.removeEventListener("click", handler);
-                        }
-                    });
-                }, 0);
+                overlay.appendChild(card);
+                document.body.appendChild(overlay);
+                overlay.addEventListener("click", ev => { if (ev.target === overlay) overlay.remove(); });
             });
             btnRow.appendChild(dlBtn);
 
