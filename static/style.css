@@ -1057,9 +1057,12 @@ body.light-mode .close-btn:hover { background: #fff; }
 }
 .player-pip-btn:hover { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
 
-/* ── Subtitle upload button ── */
-.player-sub-btn {
-    width: 34px; height: 34px; flex-shrink: 0;
+/* ── Player gear / settings ── */
+.player-settings-wrap {
+    position: relative; flex-shrink: 0;
+}
+.player-settings-btn {
+    width: 34px; height: 34px;
     display: flex; align-items: center; justify-content: center;
     background: rgba(255,255,255,0.08);
     border: 1px solid rgba(255,255,255,0.12);
@@ -1067,8 +1070,40 @@ body.light-mode .close-btn:hover { background: #fff; }
     font-size: 0.8rem; cursor: pointer;
     transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
-.player-sub-btn:hover  { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
-.player-sub-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+.player-settings-btn:hover,
+.player-settings-btn.open { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+.player-settings-btn.open .fa-gear { animation: spin-once 0.3s ease; }
+@keyframes spin-once { from { transform: rotate(0deg); } to { transform: rotate(90deg); } }
+
+.player-settings-menu {
+    position: absolute;
+    top: calc(100% + 8px); right: 0;
+    min-width: 210px;
+    background: #1c1814;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    padding: 0.4rem 0;
+    z-index: 200;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+}
+.settings-menu-title {
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: rgba(255,255,255,0.35);
+    padding: 0.35rem 0.9rem 0.2rem;
+}
+.settings-menu-item {
+    display: flex; align-items: center; gap: 0.65rem;
+    padding: 0.55rem 0.9rem;
+    font-size: 0.82rem; color: rgba(255,255,255,0.85);
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+}
+.settings-menu-item:hover { background: rgba(245,158,11,0.12); color: var(--accent); }
+.settings-menu-item.active { color: var(--accent); }
+.settings-menu-item i { width: 1rem; text-align: center; flex-shrink: 0; }
+.settings-menu-sep {
+    height: 1px; background: rgba(255,255,255,0.08); margin: 0.3rem 0;
+}
 
 /* ── Subtitle overlay text ── */
 .player-subtitles {

@@ -797,16 +797,35 @@ document.addEventListener("DOMContentLoaded", () => {
     // Watch-time tracking (for progress bars on cards)
     let watchStartTime = null;
 
+    // ── Player settings gear menu ──────────────────────────────────────────────
+    const settingsBtn  = document.getElementById("player-settings-btn");
+    const settingsMenu = document.getElementById("player-settings-menu");
+
+    settingsBtn.addEventListener("click", e => {
+        e.stopPropagation();
+        const open = settingsMenu.style.display === "none";
+        settingsMenu.style.display = open ? "block" : "none";
+        settingsBtn.classList.toggle("open", open);
+    });
+    // Close menu when clicking outside
+    document.addEventListener("click", e => {
+        if (!document.getElementById("player-settings-wrap").contains(e.target)) {
+            settingsMenu.style.display = "none";
+            settingsBtn.classList.remove("open");
+        }
+    });
+
     // ── Subtitle system ────────────────────────────────────────────────────────
-    let subCues      = [];      // [{start: ms, end: ms, text: "..."}]
-    let subOffsetMs  = 0;       // user-controlled timing offset
+    let subCues      = [];
+    let subOffsetMs  = 0;
     let subInterval  = null;
-    const subDisplay  = document.getElementById("player-subtitles");
-    const subControls = document.getElementById("player-sub-controls");
-    const subFilename = document.getElementById("sub-filename");
-    const subOffsetEl = document.getElementById("sub-offset-display");
-    const subInput    = document.getElementById("player-sub-input");
-    const subBtn      = document.getElementById("player-sub-btn");
+    const subDisplay   = document.getElementById("player-subtitles");
+    const subControls  = document.getElementById("player-sub-controls");
+    const subFilename  = document.getElementById("sub-filename");
+    const subOffsetEl  = document.getElementById("sub-offset-display");
+    const subInput     = document.getElementById("player-sub-input");
+    const subMenuItem  = document.getElementById("player-sub-btn");  // the label inside the menu
+    const subMenuLabel = document.getElementById("sub-menu-label");
 
     function parseTimeMs(ts) {
         // Handles HH:MM:SS,mmm and HH:MM:SS.mmm
@@ -855,13 +874,17 @@ document.addEventListener("DOMContentLoaded", () => {
         if (subInterval) { clearInterval(subInterval); subInterval = null; }
         subDisplay.innerHTML = "";
         subControls.style.display = "none";
-        subBtn.classList.remove("active");
+        subMenuItem.classList.remove("active");
+        subMenuLabel.textContent = "Upload Subtitles";
         subInput.value = "";
     }
 
     subInput.addEventListener("change", () => {
         const file = subInput.files[0];
         if (!file) return;
+        // Close the settings menu after picking a file
+        settingsMenu.style.display = "none";
+        settingsBtn.classList.remove("open");
         const reader = new FileReader();
         reader.onload = e => {
             const text = e.target.result;
@@ -871,7 +894,8 @@ document.addEventListener("DOMContentLoaded", () => {
             subFilename.textContent = file.name;
             subOffsetEl.textContent = "0.0s";
             subControls.style.display = "flex";
-            subBtn.classList.add("active");
+            subMenuItem.classList.add("active");
+            subMenuLabel.textContent = file.name.length > 22 ? file.name.slice(0, 22) + "…" : file.name;
             startSubSync();
             showToast(`Subtitles loaded — ${subCues.length} lines`);
         };

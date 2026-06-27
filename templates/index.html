@@ -185,10 +185,20 @@
                     <button class="player-src-btn" title="vidsrc.xyz">S3</button>
                     <button class="player-src-btn" title="2embed.cc">S4</button>
                 </div>
-                <label id="player-sub-btn" class="player-sub-btn" title="Upload Subtitles (.srt / .vtt)">
-                    <i class="fa-solid fa-closed-captioning"></i>
-                    <input type="file" id="player-sub-input" accept=".srt,.vtt" style="display:none;">
-                </label>
+                <!-- Settings gear -->
+                <div class="player-settings-wrap" id="player-settings-wrap">
+                    <button id="player-settings-btn" class="player-settings-btn" title="Settings">
+                        <i class="fa-solid fa-gear"></i>
+                    </button>
+                    <div id="player-settings-menu" class="player-settings-menu" style="display:none;">
+                        <div class="settings-menu-title">Player Settings</div>
+                        <label class="settings-menu-item" id="player-sub-btn">
+                            <i class="fa-solid fa-closed-captioning"></i>
+                            <span id="sub-menu-label">Upload Subtitles</span>
+                            <input type="file" id="player-sub-input" accept=".srt,.vtt" style="display:none;">
+                        </label>
+                    </div>
+                </div>
                 <button id="player-pip" class="player-pip-btn" title="Picture-in-Picture">
                     <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
                 </button>
