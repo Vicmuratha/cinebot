@@ -1571,6 +1571,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 const resGrid = document.createElement("div");
                 resGrid.className = "dl-res-grid";
 
+                // Download sources per resolution — each mapped to a source known to carry that quality
+                const DL_MOVIE = {
+                    "1080p": id => `https://embed.su/embed/movie/${id}`,
+                    "720p":  id => `https://vidlink.pro/movie/${id}`,
+                    "480p":  id => `https://vidsrc.xyz/embed/movie?tmdb=${id}`,
+                };
+                const DL_TV = {
+                    "1080p": (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}`,
+                    "720p":  (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}`,
+                    "480p":  (id, s, e) => `https://vidsrc.xyz/embed/tv?tmdb=${id}&season=${s}&episode=${e}`,
+                };
+
                 ["1080p", "720p", "480p"].forEach(res => {
                     const btn = document.createElement("button");
                     btn.className = "dl-res-btn";
@@ -1581,12 +1593,13 @@ document.addEventListener("DOMContentLoaded", () => {
                         if (isTV) {
                             const s = parseInt(seasonInput?.value || "1");
                             const ep = parseInt(episodeInput?.value || "1");
-                            url = `https://dl.vidsrc.vip/tv/${movie.id}/${s}/${ep}`;
+                            url = DL_TV[res](movie.id, s, ep);
                         } else {
-                            url = `https://dl.vidsrc.vip/movie/${movie.id}`;
+                            url = DL_MOVIE[res](movie.id);
                         }
                         window.open(url, "_blank", "noopener");
                         overlay.remove();
+                        showToast("Click the download button inside the opened page");
                     });
                     resGrid.appendChild(btn);
                 });
