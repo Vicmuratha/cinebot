@@ -130,6 +130,18 @@ def get_collection(collection_id):
         return jsonify(data), 200
     return jsonify({"error": "Collection not found"}), 404
 
+@app.route("/download", methods=["GET"])
+def get_download():
+    tmdb_id  = request.args.get("tmdb_id", type=int)
+    item_type = request.args.get("type", "movie")
+    quality  = request.args.get("quality", "1080p")
+    season   = request.args.get("season", 1, type=int)
+    episode  = request.args.get("episode", 1, type=int)
+    if not tmdb_id:
+        return jsonify({"error": "tmdb_id required"}), 400
+    links = tmdb_service.get_download_links(tmdb_id, item_type, quality, season, episode)
+    return jsonify({"links": links}), 200
+
 @app.route("/person/<int:person_id>", methods=["GET"])
 def get_person(person_id):
     person = tmdb_service.get_person(person_id)

@@ -1571,35 +1571,57 @@ document.addEventListener("DOMContentLoaded", () => {
                 const resGrid = document.createElement("div");
                 resGrid.className = "dl-res-grid";
 
-                // Download sources per resolution — each mapped to a source known to carry that quality
-                const DL_MOVIE = {
-                    "1080p": id => `https://embed.su/embed/movie/${id}`,
-                    "720p":  id => `https://vidlink.pro/movie/${id}`,
-                    "480p":  id => `https://vidsrc.xyz/embed/movie?tmdb=${id}`,
-                };
-                const DL_TV = {
-                    "1080p": (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}`,
-                    "720p":  (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}`,
-                    "480p":  (id, s, e) => `https://vidsrc.xyz/embed/tv?tmdb=${id}&season=${s}&episode=${e}`,
-                };
-
-                ["1080p", "720p", "480p"].forEach(res => {
+["1080p", "720p", "480p"].forEach(res => {
                     const btn = document.createElement("button");
                     btn.className = "dl-res-btn";
                     const icons = { "1080p": "fa-circle-dot", "720p": "fa-circle-half-stroke", "480p": "fa-circle" };
                     btn.innerHTML = `<i class="fa-solid ${icons[res]}"></i>${res}`;
-                    btn.addEventListener("click", () => {
-                        let url;
-                        if (isTV) {
-                            const s = parseInt(seasonInput?.value || "1");
-                            const ep = parseInt(episodeInput?.value || "1");
-                            url = DL_TV[res](movie.id, s, ep);
-                        } else {
-                            url = DL_MOVIE[res](movie.id);
+                    btn.addEventListener("click", async () => {
+                        btn.disabled = true;
+                        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Finding download…`;
+
+                        const s  = parseInt(seasonInput?.value  || "1");
+                        const ep = parseInt(episodeInput?.value || "1");
+                        const qs = new URLSearchParams({
+                            tmdb_id: movie.id, type, quality: res,
+                            season: s, episode: ep
+                        });
+
+                        try {
+                            const data = await fetch(`/download?${qs}`).then(r => r.json());
+                            const links = data.links || [];
+
+                            if (!links.length) throw new Error("no links");
+
+                            // Prefer a direct MP4 link; fall back to torrent
+                            const direct = links.find(l => l.direct) || links[0];
+                            overlay.remove();
+
+                            if (direct.direct) {
+                                // Direct MP4 — trigger browser download immediately
+                                const a = document.createElement("a");
+                                a.href = direct.url;
+                                a.download = `${title} (${res}).mp4`;
+                                a.rel = "noopener";
+                                document.body.appendChild(a);
+                                a.click();
+                                a.remove();
+                                showToast(`Downloading ${res}…`);
+                            } else {
+                                // Torrent file — also a real download (opens in torrent app)
+                                const a = document.createElement("a");
+                                a.href = direct.url;
+                                a.download = "";
+                                a.rel = "noopener";
+                                document.body.appendChild(a);
+                                a.click();
+                                a.remove();
+                                showToast(`Downloading ${res} torrent — open it to start the video download`);
+                            }
+                        } catch {
+                            overlay.remove();
+                            showToast("Download not available — try another quality or source");
                         }
-                        window.open(url, "_blank", "noopener");
-                        overlay.remove();
-                        showToast("Click the download button inside the opened page");
                     });
                     resGrid.appendChild(btn);
                 });

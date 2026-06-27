@@ -1,3 +1,4 @@
+import re
 import time
 import requests
 from config import TMDB_API_KEY, BASE_URL
@@ -212,3 +213,55 @@ class TMDBService:
         except Exception as e:
             print(f"Error fetching person: {e}")
             return None
+
+    def get_download_links(self, tmdb_id, item_type, quality, season=1, episode=1):
+        """Return a list of direct download URLs for the requested quality."""
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        links = []
+
+        if item_type == "movie":
+            # ── YTS API (indexed by IMDB ID) ─────────────────────────────────
+            try:
+                movie = requests.get(
+                    f"{self.base_url}/movie/{tmdb_id}",
+                    params={"api_key": self.api_key}, timeout=8
+                ).json()
+                imdb_id = movie.get("imdb_id", "")
+                if imdb_id:
+                    yts = requests.get(
+                        "https://yts.mx/api/v2/list_movies.json",
+                        params={"query_term": imdb_id, "limit": 1}, timeout=8
+                    ).json()
+                    torrents = yts.get("data", {}).get("movies", [{}])[0].get("torrents", [])
+                    # Quality map: user picks "1080p/720p/480p", YTS has "1080p/720p/480p/2160p"
+                    quality_map = {"1080p": ["1080p", "720p"], "720p": ["720p", "1080p"], "480p": ["480p", "720p"]}
+                    for q in quality_map.get(quality, [quality]):
+                        match = next((t for t in torrents if t.get("quality") == q), None)
+                        if match:
+                            links.append({"url": match["url"], "label": f"YTS {match['quality']} ({match.get('size','')}) — opens in torrent app", "direct": False})
+                            break
+            except Exception as e:
+                print(f"YTS lookup error: {e}")
+
+            # ── Scrape moviesapi.club for direct MP4 ─────────────────────────
+            try:
+                r = requests.get(f"https://moviesapi.club/movie/{tmdb_id}", headers=headers, timeout=8)
+                mp4s = re.findall(r'"file"\s*:\s*"(https?://[^"]+)"', r.text)
+                mp4s += re.findall(r'src=["\']([^"\']+\.mp4[^"\']*)["\']', r.text)
+                for url in mp4s[:1]:
+                    links.append({"url": url, "label": "Direct MP4", "direct": True})
+            except Exception as e:
+                print(f"moviesapi scrape error: {e}")
+
+        else:
+            # ── TV: scrape moviesapi.club ─────────────────────────────────────
+            try:
+                r = requests.get(f"https://moviesapi.club/tv/{tmdb_id}/{season}/{episode}", headers=headers, timeout=8)
+                mp4s = re.findall(r'"file"\s*:\s*"(https?://[^"]+)"', r.text)
+                mp4s += re.findall(r'src=["\']([^"\']+\.mp4[^"\']*)["\']', r.text)
+                for url in mp4s[:1]:
+                    links.append({"url": url, "label": "Direct MP4", "direct": True})
+            except Exception as e:
+                print(f"TV scrape error: {e}")
+
+        return links
