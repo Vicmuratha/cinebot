@@ -215,53 +215,142 @@ class TMDBService:
             return None
 
     def get_download_links(self, tmdb_id, item_type, quality, season=1, episode=1):
-        """Return a list of direct download URLs for the requested quality."""
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        """Try multiple sources to find a real download link for the requested quality."""
+        UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+        headers = {"User-Agent": UA}
         links = []
 
-        if item_type == "movie":
-            # ── YTS API (indexed by IMDB ID) ─────────────────────────────────
-            try:
-                movie = requests.get(
-                    f"{self.base_url}/movie/{tmdb_id}",
-                    params={"api_key": self.api_key}, timeout=8
-                ).json()
-                imdb_id = movie.get("imdb_id", "")
-                if imdb_id:
-                    yts = requests.get(
-                        "https://yts.mx/api/v2/list_movies.json",
-                        params={"query_term": imdb_id, "limit": 1}, timeout=8
-                    ).json()
-                    torrents = yts.get("data", {}).get("movies", [{}])[0].get("torrents", [])
-                    # Quality map: user picks "1080p/720p/480p", YTS has "1080p/720p/480p/2160p"
-                    quality_map = {"1080p": ["1080p", "720p"], "720p": ["720p", "1080p"], "480p": ["480p", "720p"]}
-                    for q in quality_map.get(quality, [quality]):
-                        match = next((t for t in torrents if t.get("quality") == q), None)
-                        if match:
-                            links.append({"url": match["url"], "label": f"YTS {match['quality']} ({match.get('size','')}) — opens in torrent app", "direct": False})
-                            break
-            except Exception as e:
-                print(f"YTS lookup error: {e}")
+        # Preferred quality fallback order
+        Q_FALLBACK = {
+            "1080p": ["1080p", "720p",  "480p"],
+            "720p":  ["720p",  "480p",  "1080p"],
+            "480p":  ["480p",  "720p",  "1080p"],
+        }
 
-            # ── Scrape moviesapi.club for direct MP4 ─────────────────────────
+        def pick_torrent(torrents, wanted_quality):
+            for q in Q_FALLBACK.get(wanted_quality, [wanted_quality]):
+                candidates = [t for t in torrents if t.get("quality") == q]
+                if candidates:
+                    # Prefer bluray > web > hdrip > cam
+                    TYPE_RANK = {"bluray": 4, "web": 3, "hdrip": 2, "cam": 0}
+                    best = sorted(candidates, key=lambda t: TYPE_RANK.get(t.get("type","").lower(), 1), reverse=True)
+                    return best[0], q
+            return None, None
+
+        if item_type == "movie":
+            # ── 1. Get TMDB details (title + IMDB ID) ────────────────────────
+            imdb_id, movie_title, movie_year = "", "", ""
             try:
-                r = requests.get(f"https://moviesapi.club/movie/{tmdb_id}", headers=headers, timeout=8)
-                mp4s = re.findall(r'"file"\s*:\s*"(https?://[^"]+)"', r.text)
-                mp4s += re.findall(r'src=["\']([^"\']+\.mp4[^"\']*)["\']', r.text)
-                for url in mp4s[:1]:
-                    links.append({"url": url, "label": "Direct MP4", "direct": True})
+                md = requests.get(f"{self.base_url}/movie/{tmdb_id}",
+                                  params={"api_key": self.api_key}, timeout=8).json()
+                imdb_id    = md.get("imdb_id", "")
+                movie_title = md.get("title", "")
+                movie_year  = (md.get("release_date") or "")[:4]
             except Exception as e:
-                print(f"moviesapi scrape error: {e}")
+                print(f"TMDB detail error: {e}")
+
+            # ── 2. YTS API — try IMDB ID first, then title ───────────────────
+            def yts_search(term):
+                try:
+                    r = requests.get("https://yts.mx/api/v2/list_movies.json",
+                                     params={"query_term": term, "limit": 5, "sort_by": "seeds"},
+                                     timeout=10)
+                    return r.json().get("data", {}).get("movies", [])
+                except:
+                    return []
+
+            yts_movies = (yts_search(imdb_id) if imdb_id else []) or \
+                         yts_search(f"{movie_title} {movie_year}".strip())
+
+            for m in yts_movies[:3]:
+                torrent, matched_q = pick_torrent(m.get("torrents", []), quality)
+                if torrent:
+                    links.append({
+                        "url":    torrent["url"],
+                        "label":  f"{matched_q} · {torrent.get('size','?')} · {m.get('title','')} — YTS",
+                        "direct": False,
+                        "type":   "torrent",
+                    })
+                    break
+
+            # ── 3. EZTV (movies sometimes listed) ───────────────────────────
+            if not links and imdb_id:
+                try:
+                    iid = imdb_id.replace("tt", "")
+                    r = requests.get("https://eztvx.to/api/get-torrents",
+                                     params={"imdb_id": iid, "limit": 10}, timeout=8)
+                    for t in r.json().get("torrents", []):
+                        name = t.get("filename", "").upper()
+                        if quality.replace("P","") in name or quality.upper() in name:
+                            links.append({
+                                "url":    t.get("torrent_url", ""),
+                                "label":  f"{t.get('filename','')} — EZTV",
+                                "direct": False, "type": "torrent",
+                            })
+                            break
+                except Exception as e:
+                    print(f"EZTV movie error: {e}")
 
         else:
-            # ── TV: scrape moviesapi.club ─────────────────────────────────────
+            # ── TV: EZTV API (indexed by IMDB ID) ────────────────────────────
+            imdb_id, show_name = "", ""
             try:
-                r = requests.get(f"https://moviesapi.club/tv/{tmdb_id}/{season}/{episode}", headers=headers, timeout=8)
-                mp4s = re.findall(r'"file"\s*:\s*"(https?://[^"]+)"', r.text)
-                mp4s += re.findall(r'src=["\']([^"\']+\.mp4[^"\']*)["\']', r.text)
-                for url in mp4s[:1]:
-                    links.append({"url": url, "label": "Direct MP4", "direct": True})
+                ext = requests.get(f"{self.base_url}/tv/{tmdb_id}/external_ids",
+                                   params={"api_key": self.api_key}, timeout=8).json()
+                imdb_id = ext.get("imdb_id", "")
+                sd = requests.get(f"{self.base_url}/tv/{tmdb_id}",
+                                  params={"api_key": self.api_key}, timeout=8).json()
+                show_name = sd.get("name", "")
             except Exception as e:
-                print(f"TV scrape error: {e}")
+                print(f"TV TMDB error: {e}")
+
+            ep_str = f"S{season:02d}E{episode:02d}"
+
+            if imdb_id:
+                try:
+                    iid = imdb_id.replace("tt", "")
+                    r = requests.get("https://eztvx.to/api/get-torrents",
+                                     params={"imdb_id": iid, "limit": 100}, timeout=10)
+                    torrents = r.json().get("torrents", [])
+                    # First pass: match episode + quality
+                    for t in torrents:
+                        name = t.get("filename", "").upper()
+                        if ep_str in name and quality.upper().replace("P","") in name:
+                            links.append({
+                                "url":    t.get("torrent_url", ""),
+                                "label":  f"{t.get('filename','')} — EZTV",
+                                "direct": False, "type": "torrent",
+                            })
+                            break
+                    # Second pass: any quality for that episode
+                    if not links:
+                        for t in torrents:
+                            if ep_str in t.get("filename", "").upper():
+                                links.append({
+                                    "url":    t.get("torrent_url", ""),
+                                    "label":  f"{t.get('filename','')} — EZTV",
+                                    "direct": False, "type": "torrent",
+                                })
+                                break
+                except Exception as e:
+                    print(f"EZTV TV error: {e}")
+
+            # ── YTS TV fallback (rare but some shows are there) ──────────────
+            if not links and show_name:
+                try:
+                    r = requests.get("https://yts.mx/api/v2/list_movies.json",
+                                     params={"query_term": f"{show_name} S{season:02d}E{episode:02d}",
+                                             "limit": 3}, timeout=8)
+                    for m in r.json().get("data", {}).get("movies", []):
+                        torrent, matched_q = pick_torrent(m.get("torrents", []), quality)
+                        if torrent:
+                            links.append({
+                                "url":    torrent["url"],
+                                "label":  f"{matched_q} · {torrent.get('size','?')} — YTS",
+                                "direct": False, "type": "torrent",
+                            })
+                            break
+                except Exception as e:
+                    print(f"YTS TV error: {e}")
 
         return links
