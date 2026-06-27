@@ -1509,6 +1509,80 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             btnRow.appendChild(shareBtn);
 
+            // Download button
+            const dlBtn = document.createElement("button");
+            dlBtn.className = "dl-btn";
+            dlBtn.innerHTML = '<i class="fa-solid fa-download"></i>';
+            dlBtn.title = "Download";
+            dlBtn.addEventListener("click", () => {
+                // Remove any existing picker
+                document.getElementById("dl-picker")?.remove();
+
+                const picker = document.createElement("div");
+                picker.id = "dl-picker";
+                picker.className = "dl-picker";
+
+                const label = document.createElement("div");
+                label.className = "dl-picker-label";
+                label.textContent = "Select Resolution";
+                picker.appendChild(label);
+
+                // TV: season + episode inputs
+                let seasonInput, episodeInput;
+                if (isTV) {
+                    const epRow = document.createElement("div");
+                    epRow.className = "dl-ep-row";
+                    seasonInput  = document.createElement("input");
+                    episodeInput = document.createElement("input");
+                    [seasonInput, episodeInput].forEach((inp, i) => {
+                        inp.type = "number"; inp.min = "1"; inp.value = "1";
+                        inp.className = "dl-ep-input";
+                        inp.placeholder = i === 0 ? "S" : "E";
+                        epRow.appendChild(inp);
+                    });
+                    picker.appendChild(epRow);
+                }
+
+                ["1080p", "720p", "480p"].forEach(res => {
+                    const btn = document.createElement("button");
+                    btn.className = "dl-res-btn";
+                    btn.textContent = res;
+                    btn.addEventListener("click", () => {
+                        const qualityParam = res === "1080p" ? "1080" : res === "720p" ? "720" : "480";
+                        let url;
+                        if (isTV) {
+                            const s = parseInt(seasonInput?.value || 1);
+                            const e = parseInt(episodeInput?.value || 1);
+                            url = `https://dl.vidsrc.vip/tv/${movie.id}/${s}/${e}`;
+                        } else {
+                            url = `https://dl.vidsrc.vip/movie/${movie.id}`;
+                        }
+                        window.open(url, "_blank", "noopener");
+                        picker.remove();
+                    });
+                    picker.appendChild(btn);
+                });
+
+                const cancelBtn = document.createElement("button");
+                cancelBtn.className = "dl-cancel-btn";
+                cancelBtn.textContent = "Cancel";
+                cancelBtn.addEventListener("click", () => picker.remove());
+                picker.appendChild(cancelBtn);
+
+                // Position picker above the button
+                info.appendChild(picker);
+                // Close when clicking outside
+                setTimeout(() => {
+                    document.addEventListener("click", function handler(e) {
+                        if (!picker.contains(e.target) && e.target !== dlBtn) {
+                            picker.remove();
+                            document.removeEventListener("click", handler);
+                        }
+                    });
+                }, 0);
+            });
+            btnRow.appendChild(dlBtn);
+
             info.appendChild(btnRow);
 
             heroRow.appendChild(info);
