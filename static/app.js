@@ -1588,19 +1588,19 @@ document.addEventListener("DOMContentLoaded", () => {
                         });
 
                         try {
-                            const data = await fetch(`/download?${qs}`).then(r => r.json());
+                            const resp = await fetch(`/download?${qs}`);
+                            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                            const data = await resp.json();
                             const links = data.links || [];
-
                             if (!links.length) throw new Error("no links");
 
-                            // Prefer a direct MP4 link; fall back to torrent
-                            const direct = links.find(l => l.direct) || links[0];
+                            const found = links[0];
                             overlay.remove();
 
-                            if (direct.direct) {
-                                // Direct MP4 — trigger browser download immediately
+                            if (found.direct) {
+                                // Direct MP4 download
                                 const a = document.createElement("a");
-                                a.href = direct.url;
+                                a.href = found.url;
                                 a.download = `${title} (${res}).mp4`;
                                 a.rel = "noopener";
                                 document.body.appendChild(a);
@@ -1608,19 +1608,47 @@ document.addEventListener("DOMContentLoaded", () => {
                                 a.remove();
                                 showToast(`Downloading ${res}…`);
                             } else {
-                                // Torrent file — also a real download (opens in torrent app)
-                                const a = document.createElement("a");
-                                a.href = direct.url;
-                                a.download = "";
-                                a.rel = "noopener";
-                                document.body.appendChild(a);
-                                a.click();
-                                a.remove();
-                                showToast(`Downloading ${res} torrent — open it to start the video download`);
+                                // Torrent — download .torrent file, which opens in torrent client
+                                // Try .torrent file first (itorrents.org cache), then magnet link
+                                const torrentUrl = found.url;
+                                const magnetUrl  = found.magnet;
+
+                                // Show a mini result card with both options
+                                const resultOverlay = document.createElement("div");
+                                resultOverlay.className = "dl-overlay";
+                                resultOverlay.innerHTML = `
+                                  <div class="dl-card" style="max-width:440px;">
+                                    <div class="dl-heading"><i class="fa-brands fa-pirate-bay" style="color:var(--accent)"></i> Torrent Found</div>
+                                    <p style="font-size:0.8rem;color:var(--text-dim);margin:0 0 1rem;line-height:1.4;">${found.label}</p>
+                                    <div style="display:flex;flex-direction:column;gap:0.6rem;">
+                                      ${torrentUrl ? `<a class="dl-res-btn" href="${torrentUrl}" target="_blank" rel="noopener" style="text-decoration:none;text-align:center;">
+                                        <i class="fa-solid fa-file-arrow-down"></i> Download .torrent file
+                                      </a>` : ""}
+                                      ${magnetUrl ? `<a class="dl-res-btn" href="${magnetUrl}" rel="noopener" style="text-decoration:none;text-align:center;background:rgba(245,158,11,0.12);">
+                                        <i class="fa-solid fa-magnet"></i> Open Magnet Link (torrent client)
+                                      </a>` : ""}
+                                    </div>
+                                    <p style="font-size:0.72rem;color:var(--text-dim);margin:0.8rem 0 0;text-align:center;">Click either option to start downloading the video</p>
+                                    <button class="dl-cancel-btn" style="margin-top:0.75rem;">Close</button>
+                                  </div>`;
+                                document.body.appendChild(resultOverlay);
+                                resultOverlay.querySelector(".dl-cancel-btn").onclick = () => resultOverlay.remove();
+                                resultOverlay.addEventListener("click", e => { if (e.target === resultOverlay) resultOverlay.remove(); });
+
+                                // Also auto-click the .torrent file link so it starts immediately
+                                if (torrentUrl) {
+                                    const a = document.createElement("a");
+                                    a.href = torrentUrl;
+                                    a.rel = "noopener";
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    a.remove();
+                                }
                             }
-                        } catch {
+                        } catch (err) {
+                            console.error("[DL]", err);
                             overlay.remove();
-                            showToast("Download not available — try another quality or source");
+                            showToast("No torrent found — try a different quality or check your connection");
                         }
                     });
                     resGrid.appendChild(btn);
