@@ -772,7 +772,7 @@ document.addEventListener("DOMContentLoaded", () => {
         (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}`,
         (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}`,
         (id, s, e) => `https://vidsrc.xyz/embed/tv?tmdb=${id}&season=${s}&episode=${e}`,
-        (id, s, e) => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`,
+        (id, s, e) => `https://www.2embed.cc/embedtv/${id}?s=${s}&e=${e}`,
     ];
 
     let currentItemId   = null;
@@ -796,6 +796,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Watch-time tracking (for progress bars on cards)
     let watchStartTime = null;
+    // Subtitle sync clock — set in markPlaying() so subtitles align to actual video start
+    let subSyncStartTime = null;
 
     // ── Player settings gear menu ──────────────────────────────────────────────
     const settingsBtn  = document.getElementById("player-settings-btn");
@@ -860,17 +862,26 @@ document.addEventListener("DOMContentLoaded", () => {
     function startSubSync() {
         if (subInterval) clearInterval(subInterval);
         subInterval = setInterval(() => {
-            if (!watchStartTime || !subCues.length) { subDisplay.innerHTML = ""; return; }
-            const elapsed = Date.now() - watchStartTime + subOffsetMs;
+            if (!subCues.length) { subDisplay.innerHTML = ""; return; }
+            // Use subSyncStartTime (set when video actually starts) for accurate sync;
+            // fall back to watchStartTime before the video has confirmed playback.
+            const origin = subSyncStartTime || watchStartTime;
+            if (!origin) { subDisplay.innerHTML = ""; return; }
+            const elapsed = Date.now() - origin + subOffsetMs;
             const cue = subCues.find(c => elapsed >= c.start && elapsed <= c.end);
-            subDisplay.innerHTML = cue
-                ? `<span>${cue.text.replace(/\n/g, "<br>")}</span>`
-                : "";
+            if (cue) {
+                const span = document.createElement("span");
+                span.innerHTML = cue.text.replace(/\n/g, "<br>");
+                subDisplay.innerHTML = "";
+                subDisplay.appendChild(span);
+            } else {
+                subDisplay.innerHTML = "";
+            }
         }, 80);
     }
 
     function clearSubs() {
-        subCues = []; subOffsetMs = 0;
+        subCues = []; subOffsetMs = 0; subSyncStartTime = null;
         if (subInterval) { clearInterval(subInterval); subInterval = null; }
         subDisplay.innerHTML = "";
         subControls.style.display = "none";
@@ -935,6 +946,7 @@ document.addEventListener("DOMContentLoaded", () => {
         clearAutoSwitch();
         setSourceStatus(null);
         localStorage.setItem("preferredSource", activeSource);
+        subSyncStartTime = Date.now();  // subtitles clock from actual play start
         if (currentItemType === "tv") scheduleAutoNext();
     }
 
@@ -1100,11 +1112,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         isPlaying = false;
         watchStartTime = Date.now();
+        subSyncStartTime = null;
         hideAutoNext();
         playerNextEpBtn.style.display = currentItemType === "tv" ? "inline-flex" : "none";
         playerOverlay.classList.add("open");
         document.body.style.overflow = "hidden";
-        loadSource(0);
+        loadSource(activeSource);   // respect saved preferred source
     }
 
     function closePlayer() {
@@ -1733,23 +1746,63 @@ document.addEventListener("DOMContentLoaded", () => {
                                 const magnetUrl  = found.magnet;
 
                                 // Show a mini result card with both options
+                                // Build with DOM (not innerHTML) to avoid XSS from torrent names
                                 const resultOverlay = document.createElement("div");
                                 resultOverlay.className = "dl-overlay";
-                                resultOverlay.innerHTML = `
-                                  <div class="dl-card" style="max-width:440px;">
-                                    <div class="dl-heading"><i class="fa-brands fa-pirate-bay" style="color:var(--accent)"></i> Torrent Found</div>
-                                    <p style="font-size:0.8rem;color:var(--text-dim);margin:0 0 1rem;line-height:1.4;">${found.label}</p>
-                                    <div style="display:flex;flex-direction:column;gap:0.6rem;">
-                                      ${torrentUrl ? `<a class="dl-res-btn" href="${torrentUrl}" target="_blank" rel="noopener" style="text-decoration:none;text-align:center;">
-                                        <i class="fa-solid fa-file-arrow-down"></i> Download .torrent file
-                                      </a>` : ""}
-                                      ${magnetUrl ? `<a class="dl-res-btn" href="${magnetUrl}" rel="noopener" style="text-decoration:none;text-align:center;background:rgba(245,158,11,0.12);">
-                                        <i class="fa-solid fa-magnet"></i> Open Magnet Link (torrent client)
-                                      </a>` : ""}
-                                    </div>
-                                    <p style="font-size:0.72rem;color:var(--text-dim);margin:0.8rem 0 0;text-align:center;">Click either option to start downloading the video</p>
-                                    <button class="dl-cancel-btn" style="margin-top:0.75rem;">Close</button>
-                                  </div>`;
+
+                                const rCard = document.createElement("div");
+                                rCard.className = "dl-card";
+                                rCard.style.maxWidth = "440px";
+
+                                const rHeading = document.createElement("div");
+                                rHeading.className = "dl-heading";
+                                rHeading.innerHTML = '<i class="fa-solid fa-skull-crossbones" style="color:var(--accent)"></i> ';
+                                rHeading.appendChild(document.createTextNode("Torrent Found"));
+                                rCard.appendChild(rHeading);
+
+                                const rLabel = document.createElement("p");
+                                rLabel.style.cssText = "font-size:0.8rem;color:var(--text-dim);margin:0 0 1rem;line-height:1.4;word-break:break-word;";
+                                rLabel.textContent = found.label;  // textContent is XSS-safe
+                                rCard.appendChild(rLabel);
+
+                                const rBtns = document.createElement("div");
+                                rBtns.style.cssText = "display:flex;flex-direction:column;gap:0.6rem;";
+
+                                if (torrentUrl) {
+                                    const tLink = document.createElement("a");
+                                    tLink.className = "dl-res-btn";
+                                    tLink.href = torrentUrl;
+                                    tLink.target = "_blank";
+                                    tLink.rel = "noopener noreferrer";
+                                    tLink.style.cssText = "text-decoration:none;text-align:center;";
+                                    tLink.innerHTML = '<i class="fa-solid fa-file-arrow-down"></i> ';
+                                    tLink.appendChild(document.createTextNode("Download .torrent file"));
+                                    rBtns.appendChild(tLink);
+                                }
+                                if (magnetUrl) {
+                                    const mLink = document.createElement("a");
+                                    mLink.className = "dl-res-btn";
+                                    mLink.href = magnetUrl;
+                                    mLink.rel = "noopener noreferrer";
+                                    mLink.style.cssText = "text-decoration:none;text-align:center;background:rgba(245,158,11,0.12);";
+                                    mLink.innerHTML = '<i class="fa-solid fa-magnet"></i> ';
+                                    mLink.appendChild(document.createTextNode("Open Magnet Link (torrent client)"));
+                                    rBtns.appendChild(mLink);
+                                }
+                                rCard.appendChild(rBtns);
+
+                                const rHint = document.createElement("p");
+                                rHint.style.cssText = "font-size:0.72rem;color:var(--text-dim);margin:0.8rem 0 0;text-align:center;";
+                                rHint.textContent = "Click either option to start downloading the video";
+                                rCard.appendChild(rHint);
+
+                                const rClose = document.createElement("button");
+                                rClose.className = "dl-cancel-btn";
+                                rClose.style.marginTop = "0.75rem";
+                                rClose.textContent = "Close";
+                                rCard.appendChild(rClose);
+
+                                resultOverlay.appendChild(rCard);
                                 document.body.appendChild(resultOverlay);
                                 resultOverlay.querySelector(".dl-cancel-btn").onclick = () => resultOverlay.remove();
                                 resultOverlay.addEventListener("click", e => { if (e.target === resultOverlay) resultOverlay.remove(); });
