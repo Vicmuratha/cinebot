@@ -242,10 +242,59 @@
         </div>
     </div>
 
+    <!-- PWA install bar (shown by JS when browser fires beforeinstallprompt) -->
+    <div id="install-bar" style="display:none;" class="install-bar">
+        <div class="install-bar-left">
+            <i class="fa-solid fa-film install-bar-icon"></i>
+            <div>
+                <div class="install-bar-title">Install CineBot</div>
+                <div class="install-bar-sub">Add to home screen for the full app experience</div>
+            </div>
+        </div>
+        <div class="install-bar-actions">
+            <button class="install-btn" onclick="triggerInstall()">Install</button>
+            <button class="install-dismiss" onclick="document.getElementById('install-bar').style.display='none'" aria-label="Dismiss">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    </div>
+
     <button id="scroll-top" class="scroll-top-btn" aria-label="Back to top" style="display:none;">
         <i class="fa-solid fa-arrow-up"></i>
     </button>
     <div id="toast-container"></div>
     <script src="{{ url_for('static', filename='app.js') }}"></script>
+
+    <script>
+    // ── Service Worker registration (enables PWA install on Android/Chrome) ──
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+            navigator.serviceWorker.register("/static/sw.js")
+                .catch(err => console.warn("SW registration failed:", err));
+        });
+    }
+
+    // ── Install prompt ("Add to Home Screen" banner) ──────────────────────────
+    let _deferredInstall = null;
+    window.addEventListener("beforeinstallprompt", e => {
+        e.preventDefault();
+        _deferredInstall = e;
+        const bar = document.getElementById("install-bar");
+        if (bar) bar.style.display = "flex";
+    });
+    window.addEventListener("appinstalled", () => {
+        const bar = document.getElementById("install-bar");
+        if (bar) bar.style.display = "none";
+        _deferredInstall = null;
+    });
+    function triggerInstall() {
+        if (_deferredInstall) {
+            _deferredInstall.prompt();
+            _deferredInstall.userChoice.then(() => { _deferredInstall = null; });
+        }
+        const bar = document.getElementById("install-bar");
+        if (bar) bar.style.display = "none";
+    }
+    </script>
 </body>
 </html>

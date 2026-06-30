@@ -1611,3 +1611,54 @@ body.light-mode .search-clear:hover { background: rgba(0,0,0,0.08); }
         transition-duration: 0.01ms !important;
     }
 }
+
+/* ── PWA install bar ── */
+.install-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 9000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem 1.2rem;
+    background: #1c1814;
+    border-top: 1px solid rgba(245,158,11,0.25);
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.5);
+    animation: slideUp 0.3s ease;
+}
+@keyframes slideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+.install-bar-left {
+    display: flex; align-items: center; gap: 0.85rem; flex: 1; min-width: 0;
+}
+.install-bar-icon {
+    font-size: 1.6rem; color: var(--accent); flex-shrink: 0;
+}
+.install-bar-title {
+    font-weight: 700; font-size: 0.9rem; color: #fff;
+}
+.install-bar-sub {
+    font-size: 0.75rem; color: var(--text-dim); margin-top: 0.1rem;
+}
+.install-bar-actions {
+    display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;
+}
+.install-btn {
+    background: var(--accent); color: #000;
+    border: none; border-radius: 8px;
+    padding: 0.5rem 1.1rem;
+    font-weight: 700; font-size: 0.85rem;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+.install-btn:hover { opacity: 0.88; }
+.install-dismiss {
+    background: none; border: none;
+    color: var(--text-dim); font-size: 1rem;
+    cursor: pointer; padding: 0.4rem;
+    transition: color 0.15s;
+}
+.install-dismiss:hover { color: #fff; }

@@ -1,18 +1,26 @@
 {
-  "name": "CineBot",
+  "name": "CineBot — Movies & TV",
   "short_name": "CineBot",
-  "description": "Movie & TV discovery and streaming",
+  "description": "Stream movies and TV shows, build your watchlist, download torrents.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#08080d",
-  "theme_color": "#a78bfa",
+  "background_color": "#0c0a08",
+  "theme_color": "#f59e0b",
   "orientation": "any",
+  "categories": ["entertainment"],
   "icons": [
     {
       "src": "/static/favicon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/static/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     }
   ]
 }
