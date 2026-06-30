@@ -254,21 +254,42 @@ class TMDBService:
             return []
 
         def best_tpb_result(results, wanted_quality):
-            """Score and return the best torrent for the requested quality."""
-            Q_TERMS = {
-                "1080p": ["2160p","4k","uhd","1080p","1080","bluray","blu-ray","bdrip","remux"],
-                "720p":  ["720p","720","hdrip","webrip","web-dl","hdtv"],
-                "480p":  ["480p","480","dvdrip","dvdscr","sdtv"],
+            """Return the best torrent that strictly matches the requested quality,
+            ranked by source type then seeder count."""
+            # Terms that confirm an exact quality match in the filename
+            QUALITY_TERMS = {
+                "1080p": ["1080p", "1080i", "1080"],
+                "720p":  ["720p",  "720"],
+                "480p":  ["480p",  "480"],
             }
-            priority = Q_TERMS.get(wanted_quality, ["1080p"])
+            # Source quality ranking — index 0 is best
+            SOURCE_RANK = [
+                "remux", "bluray", "blu-ray", "bdrip", "bdremux",
+                "web-dl", "webdl", "web.dl", "webrip", "web",
+                "hdrip", "hdtv", "dvdrip", "dvdscr",
+            ]
 
-            def score(t):
-                name     = t.get("name","").lower()
-                seeders  = int(t.get("seeders", 0))
-                q_score  = next((len(priority)-i for i,term in enumerate(priority) if term in name), 0)
-                return (q_score, seeders)
+            exact_terms = QUALITY_TERMS.get(wanted_quality, [wanted_quality.lower()])
 
-            return max(results, key=score) if results else None
+            def has_exact_quality(t):
+                name = t.get("name", "").lower()
+                return any(term in name for term in exact_terms)
+
+            def source_score(t):
+                name = t.get("name", "").lower()
+                for i, src in enumerate(SOURCE_RANK):
+                    if src in name:
+                        return len(SOURCE_RANK) - i  # higher = better
+                return 0
+
+            # Try exact quality match first; fall back to all results only if nothing matches
+            exact = [t for t in results if has_exact_quality(t)]
+            pool  = exact if exact else results
+            if not pool:
+                return None
+
+            # Primary sort: source quality. Secondary: seeder count.
+            return max(pool, key=lambda t: (source_score(t), int(t.get("seeders", 0))))
 
         def tpb_to_link(t):
             h   = t.get("info_hash","").upper()
@@ -285,7 +306,7 @@ class TMDBService:
                 "seeders":   s,
             }
 
-        # ── YTS (movies — very clean 1080p/720p encodes) ──────────────────────
+        # ── YTS (movies — very clean encodes) ────────────────────────────────
         def yts_best(term, wanted_quality):
             try:
                 movies = requests.get(
@@ -295,21 +316,22 @@ class TMDBService:
                 ).json().get("data",{}).get("movies",[])
             except:
                 return None
-            ORDER = {"1080p":["2160p","1080p","720p","480p"],
-                     "720p": ["720p","1080p","480p"],
-                     "480p": ["480p","720p","1080p"]}
-            TYPE_R = {"bluray":4,"web":3,"hdrip":2}
+            # Source type preference within the same quality
+            TYPE_R = {"bluray": 4, "web": 3, "hdrip": 2}
             for m in movies:
-                for q in ORDER.get(wanted_quality, [wanted_quality]):
-                    cands = [t for t in m.get("torrents",[]) if t.get("quality")==q]
-                    if cands:
-                        best = max(cands, key=lambda t: TYPE_R.get(t.get("type","").lower(),1))
-                        return {
-                            "url":    best["url"],
-                            "magnet": None,
-                            "label":  f"{m.get('title','')} {best['quality']} · {best.get('size','?')} — YTS",
-                            "direct": False, "type": "torrent",
-                        }
+                # Strict: only return the exact requested quality
+                cands = [t for t in m.get("torrents", []) if t.get("quality") == wanted_quality]
+                if cands:
+                    best = max(cands, key=lambda t: (
+                        TYPE_R.get(t.get("type", "").lower(), 1),
+                        t.get("seeds", 0)
+                    ))
+                    return {
+                        "url":    best["url"],
+                        "magnet": None,
+                        "label":  f"{m.get('title','')} {best['quality']} {best.get('type','')} · {best.get('size','?')} — YTS",
+                        "direct": False, "type": "torrent",
+                    }
             return None
 
         # ── EZTV (TV shows by IMDB ID) ────────────────────────────────────────
@@ -325,19 +347,32 @@ class TMDBService:
                 print(f"EZTV error: {e}")
                 return None
             ep_up = ep_str.upper()
-            q_str = wanted_quality.upper()
-            # pass 1: episode + quality
-            for t in torrents:
-                n = t.get("filename","").upper()
-                if ep_up in n and q_str in n:
-                    return {"url": t.get("torrent_url",""), "magnet": t.get("magnet_url",""),
-                            "label": f"{t.get('filename','')} — EZTV", "direct": False, "type": "torrent"}
-            # pass 2: episode any quality
-            for t in torrents:
-                if ep_up in t.get("filename","").upper():
-                    return {"url": t.get("torrent_url",""), "magnet": t.get("magnet_url",""),
-                            "label": f"{t.get('filename','')} — EZTV", "direct": False, "type": "torrent"}
-            return None
+            q_str = wanted_quality.replace("p","").upper()  # "1080" or "720" or "480"
+
+            # Source ranking for picking the best among matches
+            SOURCE_RANK = ["remux","bluray","blu-ray","web-dl","webdl","webrip","web","hdtv","dvdrip"]
+            def src_score(fname):
+                fl = fname.lower()
+                for i, s in enumerate(SOURCE_RANK):
+                    if s in fl: return len(SOURCE_RANK) - i
+                return 0
+
+            # Collect all episode matches first
+            ep_matches = [t for t in torrents if ep_up in t.get("filename","").upper()]
+            if not ep_matches:
+                return None
+
+            # Pass 1: episode + exact quality → pick best source
+            quality_matches = [t for t in ep_matches if q_str in t.get("filename","").upper()]
+            pool = quality_matches if quality_matches else ep_matches
+
+            best = max(pool, key=lambda t: src_score(t.get("filename","")))
+            return {
+                "url":    best.get("torrent_url",""),
+                "magnet": best.get("magnet_url",""),
+                "label":  f"{best.get('filename','')} — EZTV",
+                "direct": False, "type": "torrent",
+            }
 
         # ═════════════════════════ MAIN LOGIC ═══════════════════════════════
         if item_type == "movie":
