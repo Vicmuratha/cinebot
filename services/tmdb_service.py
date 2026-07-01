@@ -1,9 +1,11 @@
 import re
 import time
+import threading
 import requests
 from config import TMDB_API_KEY, BASE_URL
 
 _cache = {}
+_cache_lock = threading.Lock()
 
 # Longer TTLs for stable data — reduces outbound TMDB calls significantly
 def _ttl_for(url):
@@ -20,13 +22,16 @@ def _ttl_for(url):
 
 def _cached_get(url, params):
     key = (url, tuple(sorted((k, v) for k, v in params.items() if k != "api_key")))
-    entry = _cache.get(key)
-    if entry and time.time() - entry["ts"] < _ttl_for(url):
-        return entry["data"]
+    with _cache_lock:
+        entry = _cache.get(key)
+        if entry and time.time() - entry["ts"] < _ttl_for(url):
+            return entry["data"]
+    # Fetch outside the lock so other threads aren't blocked during network I/O
     r = requests.get(url, params=params, timeout=8)
     r.raise_for_status()
     data = r.json()
-    _cache[key] = {"data": data, "ts": time.time()}
+    with _cache_lock:
+        _cache[key] = {"data": data, "ts": time.time()}
     return data
 
 class TMDBService:
