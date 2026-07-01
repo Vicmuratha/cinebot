@@ -1400,48 +1400,38 @@ document.addEventListener("DOMContentLoaded", () => {
                 const page = document.createElement("div");
                 page.className = "actor-page";
 
-                // ── Full-height portrait cover ──
-                const cover = document.createElement("div");
-                cover.className = "actor-cover";
+                // ── Portrait + info side-by-side ──
+                const headerRow = document.createElement("div");
+                headerRow.className = "actor-header-row";
+
                 if (p.profile_path) {
-                    const img = document.createElement("img");
-                    img.className = "actor-cover-img";
-                    // Use w780 for a sharper image at modal width
-                    img.src = `https://image.tmdb.org/t/p/w780${p.profile_path}`;
-                    img.alt = p.name;
-                    cover.appendChild(img);
+                    const portrait = document.createElement("img");
+                    portrait.className = "actor-portrait";
+                    portrait.src = `https://image.tmdb.org/t/p/w342${p.profile_path}`;
+                    portrait.alt = p.name;
+                    headerRow.appendChild(portrait);
                 } else {
                     const ph = document.createElement("div");
-                    ph.className = "actor-cover-ph";
+                    ph.className = "actor-portrait-ph";
                     ph.innerHTML = '<i class="fa-solid fa-user"></i>';
-                    cover.appendChild(ph);
+                    headerRow.appendChild(ph);
                 }
-                const overlay = document.createElement("div");
-                overlay.className = "actor-cover-overlay";
-                cover.appendChild(overlay);
 
-                // Name + department badge over the cover gradient
-                const coverInfo = document.createElement("div");
-                coverInfo.className = "actor-cover-info";
+                const sideInfo = document.createElement("div");
+                sideInfo.className = "actor-side-info";
+
                 if (p.known_for_department) {
                     const badge = document.createElement("span");
                     badge.className = "actor-dept-badge";
                     badge.innerHTML = `<i class="fa-solid fa-star"></i> ${p.known_for_department}`;
-                    coverInfo.appendChild(badge);
-                    coverInfo.appendChild(document.createElement("br"));
+                    sideInfo.appendChild(badge);
                 }
+
                 const nameEl = document.createElement("h2");
                 nameEl.className = "actor-name-lg";
                 nameEl.textContent = p.name;
-                coverInfo.appendChild(nameEl);
-                cover.appendChild(coverInfo);
-                page.appendChild(cover);
+                sideInfo.appendChild(nameEl);
 
-                // ── Scrollable body ──
-                const scroll = document.createElement("div");
-                scroll.className = "actor-scroll";
-
-                // Stats row (below cover, above bio)
                 const stats = document.createElement("div");
                 stats.className = "actor-stats";
                 if (p.birthday) {
@@ -1477,24 +1467,23 @@ document.addEventListener("DOMContentLoaded", () => {
                     s.appendChild(document.createTextNode(` ${totalCredits} credits`));
                     stats.appendChild(s);
                 }
-                scroll.appendChild(stats);
+                sideInfo.appendChild(stats);
+                headerRow.appendChild(sideInfo);
+                page.appendChild(headerRow);
 
-                // ── Body: bio + filmography ──
-                const body = document.createElement("div");
-                body.className = "actor-body";
-
+                // ── Biography ──
                 if (p.biography) {
                     const lbl = document.createElement("div");
                     lbl.className = "section-label";
                     lbl.textContent = "Biography";
-                    body.appendChild(lbl);
+                    page.appendChild(lbl);
 
                     const full = p.biography;
                     const short = full.length > 600 ? full.slice(0, 600) + "…" : full;
                     const bio = document.createElement("p");
                     bio.className = "actor-bio-text";
                     bio.textContent = short;
-                    body.appendChild(bio);
+                    page.appendChild(bio);
 
                     if (full.length > 600) {
                         let exp = false;
@@ -1506,10 +1495,11 @@ document.addEventListener("DOMContentLoaded", () => {
                             bio.textContent = exp ? full : short;
                             tog.textContent = exp ? "Read less" : "Read more";
                         });
-                        body.appendChild(tog);
+                        page.appendChild(tog);
                     }
                 }
 
+                // ── Filmography ──
                 function buildFilmRow(label, items, mediaType) {
                     if (!items.length) return;
                     const sec = document.createElement("div");
@@ -1542,24 +1532,22 @@ document.addEventListener("DOMContentLoaded", () => {
                         card.appendChild(t);
                         const yr = (c.release_date || c.first_air_date || "").split("-")[0];
                         if (yr) {
-                            const y = document.createElement("div");
-                            y.className = "actor-film-year";
-                            y.textContent = yr;
-                            card.appendChild(y);
+                            const yrEl = document.createElement("div");
+                            yrEl.className = "actor-film-year";
+                            yrEl.textContent = yr;
+                            card.appendChild(yrEl);
                         }
                         card.addEventListener("click", () => fetchDetails(c.id, mediaType));
                         row.appendChild(card);
                     });
                     sec.appendChild(row);
-                    body.appendChild(sec);
+                    page.appendChild(sec);
                 }
 
                 const byPop = arr => [...arr].sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
                 buildFilmRow("Movies", byPop(p.movie_credits?.cast || []).slice(0, 14), "movie");
                 buildFilmRow("TV Shows", byPop(p.tv_credits?.cast || []).slice(0, 14), "tv");
 
-                scroll.appendChild(body);
-                page.appendChild(scroll);
                 modalBody.appendChild(page);
             })
             .catch(() => {
