@@ -162,30 +162,13 @@
     <div id="player-overlay" class="player-overlay">
         <div id="player-bg" class="player-bg"></div>
         <div class="player-shell">
+
+            <!-- Slim top bar: title + action buttons only -->
             <div class="player-header">
                 <div class="player-header-left">
                     <span id="player-title" class="player-title"></span>
                     <span id="player-quality" class="player-quality-badge" style="display:none;"></span>
                 </div>
-                <div id="player-ep-picker" class="player-ep-picker" style="display:none;">
-                    <label class="ep-label">S
-                        <input id="player-season" class="ep-input" type="number" min="1" value="1">
-                    </label>
-                    <label class="ep-label">E
-                        <input id="player-episode" class="ep-input" type="number" min="1" value="1">
-                    </label>
-                    <button id="player-ep-go" class="ep-go-btn">Go</button>
-                    <button id="player-next-ep" class="player-next-ep-btn" title="Next Episode">
-                        <i class="fa-solid fa-forward-step"></i>
-                    </button>
-                </div>
-                <div class="player-sources">
-                    <button class="player-src-btn active" title="embed.su">S1</button>
-                    <button class="player-src-btn" title="vidlink.pro">S2</button>
-                    <button class="player-src-btn" title="vidsrc.xyz">S3</button>
-                    <button class="player-src-btn" title="2embed.cc">S4</button>
-                </div>
-                <!-- Settings gear -->
                 <div class="player-settings-wrap" id="player-settings-wrap">
                     <button id="player-settings-btn" class="player-settings-btn" title="Settings">
                         <i class="fa-solid fa-gear"></i>
@@ -206,8 +189,10 @@
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
+
             <div id="player-hint" class="player-hint" style="display:none;"></div>
             <div id="player-status" class="player-status" style="display:none;"></div>
+
             <!-- Auto-next episode overlay -->
             <div id="player-autonext" class="player-autonext" style="display:none;">
                 <div class="player-autonext-card">
@@ -219,14 +204,14 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Video — fills all remaining height -->
             <div class="player-frame-wrap">
                 <iframe id="player-iframe" class="player-iframe"
                     allowfullscreen
                     allow="autoplay; fullscreen; picture-in-picture; encrypted-media; accelerometer; gyroscope"
                     src=""></iframe>
-                <!-- Subtitle overlay rendered above iframe -->
                 <div id="player-subtitles" class="player-subtitles"></div>
-                <!-- Subtitle controls bar (shown when subtitles are loaded) -->
                 <div id="player-sub-controls" class="player-sub-controls" style="display:none;">
                     <span id="sub-filename" class="sub-filename"></span>
                     <div class="sub-offset-group">
@@ -239,6 +224,41 @@
                     </button>
                 </div>
             </div>
+
+            <!-- Controls bar below video: server tabs + episode picker -->
+            <div class="player-controls-bar">
+                <div class="player-controls-left">
+                    <span class="server-label"><i class="fa-solid fa-server"></i> Select Server</span>
+                    <div class="player-sources">
+                        <button class="player-src-btn active" title="embed.su">
+                            <i class="fa-solid fa-circle-play"></i> Server 1
+                        </button>
+                        <button class="player-src-btn" title="vidlink.pro">
+                            <i class="fa-solid fa-circle-play"></i> Server 2
+                        </button>
+                        <button class="player-src-btn" title="vidsrc.xyz">
+                            <i class="fa-solid fa-circle-play"></i> Server 3
+                        </button>
+                        <button class="player-src-btn" title="2embed.cc">
+                            <i class="fa-solid fa-circle-play"></i> Server 4
+                        </button>
+                    </div>
+                </div>
+                <div id="player-ep-picker" class="player-ep-picker" style="display:none;">
+                    <span class="ep-picker-label"><i class="fa-solid fa-tv"></i> Episode</span>
+                    <label class="ep-label">S
+                        <input id="player-season" class="ep-input" type="number" min="1" value="1">
+                    </label>
+                    <label class="ep-label">E
+                        <input id="player-episode" class="ep-input" type="number" min="1" value="1">
+                    </label>
+                    <button id="player-ep-go" class="ep-go-btn">Go</button>
+                    <button id="player-next-ep" class="player-next-ep-btn" title="Next Episode">
+                        <i class="fa-solid fa-forward-step"></i> Next
+                    </button>
+                </div>
+            </div>
+
         </div>
     </div>
 
