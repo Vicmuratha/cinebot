@@ -130,6 +130,29 @@ def get_collection(collection_id):
         return jsonify(data), 200
     return jsonify({"error": "Collection not found"}), 404
 
+@app.route("/anime/recommend", methods=["POST"])
+def anime_recommend():
+    data      = request.json or {}
+    year_from = data.get("year_from")
+    year_to   = data.get("year_to")
+    sort_by   = data.get("sort_by", "popularity.desc")
+    page      = int(data.get("page", 1))
+    results   = tmdb_service.discover_anime(year_from, year_to, sort_by, page)
+    return jsonify({"movies": results}), 200
+
+@app.route("/anime/search", methods=["GET"])
+def anime_search():
+    query = request.args.get("q", "").strip()
+    return jsonify({"movies": tmdb_service.search_anime(query)}), 200
+
+@app.route("/anime/trending", methods=["GET"])
+def anime_trending():
+    window = request.args.get("window", "day")
+    page   = int(request.args.get("page", 1))
+    if window not in ("day", "week"):
+        window = "day"
+    return jsonify({"movies": tmdb_service.trending_anime(window, page)}), 200
+
 @app.route("/download", methods=["GET"])
 def get_download():
     tmdb_id  = request.args.get("tmdb_id", type=int)
@@ -152,4 +175,4 @@ def get_person(person_id):
 if __name__ == "__main__":
     import os
     debug = os.environ.get("FLASK_DEBUG", "0") == "1"
-    app.run(debug=debug, use_reloader=False)
+    app.run(host="0.0.0.0", port=5000, debug=debug, use_reloader=False)

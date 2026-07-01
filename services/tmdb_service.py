@@ -214,6 +214,81 @@ class TMDBService:
             print(f"Error fetching person: {e}")
             return None
 
+    # ── Anime ────────────────────────────────────────────────────────────────
+
+    def _normalize_anime(self, item):
+        """Add media_type and unify title/release_date fields."""
+        item["media_type"] = "tv"
+        if "name" in item and "title" not in item:
+            item["title"] = item["name"]
+        if "first_air_date" in item and "release_date" not in item:
+            item["release_date"] = item.get("first_air_date", "")
+        return item
+
+    def discover_anime(self, year_from, year_to, sort_by, page=1):
+        """Discover anime TV shows via TMDB (Japanese animation)."""
+        try:
+            params = {
+                "api_key": self.api_key,
+                "with_genres": "16",           # Animation
+                "with_original_language": "ja", # Japanese originals
+                "sort_by": sort_by or "popularity.desc",
+                "vote_count.gte": 50,
+                "include_adult": "false",
+                "page": page,
+            }
+            if year_from:
+                params["first_air_date.gte"] = f"{year_from}-01-01"
+            if year_to:
+                params["first_air_date.lte"] = f"{year_to}-12-31"
+            results = _cached_get(f"{self.base_url}/discover/tv", params).get("results", [])[:20]
+            return [self._normalize_anime(r) for r in results]
+        except Exception as e:
+            print(f"Error discovering anime: {e}")
+            return []
+
+    def search_anime(self, query):
+        """Search TMDB for anime (TV + movies) by title."""
+        if not query:
+            return []
+        try:
+            results = []
+            # TV anime search
+            tv = _cached_get(f"{self.base_url}/search/tv",
+                             {"api_key": self.api_key, "query": query, "page": 1}).get("results", [])
+            for r in tv[:15]:
+                r["media_type"] = "tv"
+                r["title"] = r.get("name", "")
+                r["release_date"] = r.get("first_air_date", "")
+                results.append(r)
+            # Anime movie search
+            movies = _cached_get(f"{self.base_url}/search/movie",
+                                 {"api_key": self.api_key, "query": query, "page": 1}).get("results", [])
+            for r in movies[:8]:
+                if 16 in r.get("genre_ids", []):  # Animation genre only
+                    r["media_type"] = "movie"
+                    results.append(r)
+            return results[:15]
+        except Exception as e:
+            print(f"Error searching anime: {e}")
+            return []
+
+    def trending_anime(self, window="day", page=1):
+        """Trending anime from TMDB (animation Japanese TV)."""
+        try:
+            data = _cached_get(
+                f"{self.base_url}/trending/tv/{window}",
+                {"api_key": self.api_key, "page": page}
+            )
+            results = [
+                self._normalize_anime(r) for r in data.get("results", [])
+                if 16 in r.get("genre_ids", [])
+            ]
+            return results[:20]
+        except Exception as e:
+            print(f"Error fetching trending anime: {e}")
+            return []
+
     def get_download_links(self, tmdb_id, item_type, quality, season=1, episode=1):
         """Search Pirate Bay + YTS + EZTV for the best torrent download link."""
         from urllib.parse import quote
@@ -334,6 +409,51 @@ class TMDBService:
                     }
             return None
 
+        # ── Nyaa.si (anime torrents — best source for anime) ─────────────────
+        def nyaa_search(title, wanted_quality, ep_str=None):
+            import xml.etree.ElementTree as ET
+            q = f"{title} {ep_str} {wanted_quality}" if ep_str else f"{title} {wanted_quality}"
+            try:
+                r = requests.get("https://nyaa.si/", params={
+                    "f": "0", "c": "1_0", "q": q, "page": "rss"
+                }, headers=headers, timeout=12)
+                root = ET.fromstring(r.content)
+                NYAA_NS = "https://nyaa.si/xmlns/nyaa"
+                items = []
+                for item in root.findall(".//item"):
+                    name_el = item.find("title")
+                    link_el = item.find("link")
+                    seed_el = item.find(f"{{{NYAA_NS}}}seeders")
+                    hash_el = item.find(f"{{{NYAA_NS}}}infoHash")
+                    size_el = item.find(f"{{{NYAA_NS}}}size")
+                    if name_el is None or link_el is None: continue
+                    fname     = name_el.text or ""
+                    link      = link_el.text or ""
+                    seeds     = int(seed_el.text or 0) if seed_el is not None else 0
+                    info_hash = (hash_el.text or "").upper() if hash_el is not None else ""
+                    size_str  = size_el.text or "" if size_el is not None else ""
+                    nyaa_id   = link.split("/view/")[-1].split("/")[0] if "/view/" in link else ""
+                    torrent_url = f"https://nyaa.si/download/{nyaa_id}.torrent" if nyaa_id else ""
+                    magnet_url  = make_magnet(info_hash, fname) if info_hash else ""
+                    items.append({
+                        "name": fname, "url": torrent_url, "magnet": magnet_url,
+                        "seeders": seeds, "size": size_str,
+                    })
+                if not items: return None
+                q_str = wanted_quality.replace("p", "")  # "1080", "720", "480"
+                quality_matches = [i for i in items if q_str in i["name"]]
+                pool = quality_matches if quality_matches else items
+                best = max(pool, key=lambda x: x["seeders"])
+                return {
+                    "url":    best["url"],
+                    "magnet": best["magnet"],
+                    "label":  f"{best['name']} · {best['size']} · {best['seeders']} seeds — Nyaa.si",
+                    "direct": False, "type": "torrent",
+                }
+            except Exception as e:
+                print(f"Nyaa error: {e}")
+                return None
+
         # ── EZTV (TV shows by IMDB ID) ────────────────────────────────────────
         def eztv_best(imdb_id, ep_str, wanted_quality):
             try:
@@ -442,6 +562,43 @@ class TMDBService:
             if imdb_id:
                 link = eztv_best(imdb_id, ep_str, quality)
                 if link: return [link]
+
+        elif item_type == "anime":
+            # Get title from TMDB (try TV first, then movie)
+            anime_title = ""
+            try:
+                td = requests.get(f"{self.base_url}/tv/{tmdb_id}",
+                                  params={"api_key": self.api_key}, timeout=8).json()
+                anime_title = td.get("name", "")
+            except Exception:
+                pass
+            if not anime_title:
+                try:
+                    md = requests.get(f"{self.base_url}/movie/{tmdb_id}",
+                                      params={"api_key": self.api_key}, timeout=8).json()
+                    anime_title = md.get("title", "")
+                except Exception:
+                    pass
+
+            ep_str = f"S{season:02d}E{episode:02d}" if season else None
+            print(f"[DL] anime '{anime_title}' {ep_str or ''} quality={quality}")
+
+            # 1. Nyaa.si — best anime source
+            link = nyaa_search(anime_title, quality, ep_str)
+            if link: return [link]
+
+            # 2. Pirate Bay fallback
+            queries = [
+                f"{anime_title} {ep_str} {quality}" if ep_str else f"{anime_title} {quality}",
+                f"{anime_title} {ep_str}" if ep_str else anime_title,
+                anime_title,
+            ]
+            for q in queries:
+                if not q.strip(): continue
+                res = tpb_search(q.strip())
+                if res:
+                    best = best_tpb_result(res, quality)
+                    if best: return [tpb_to_link(best)]
 
         print(f"[DL] no results found")
         return []

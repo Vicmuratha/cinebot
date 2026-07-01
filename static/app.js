@@ -305,13 +305,12 @@ document.addEventListener("DOMContentLoaded", () => {
         fetchRecommendations();
     });
 
-    // ─── Content type toggle (Movies / TV) ───
+    // ─── Content type toggle (Movies / TV / Anime) ───
     typeBtns.forEach(btn => {
         btn.addEventListener("click", () => {
             if (btn.dataset.type === contentType) return;
             contentType = btn.dataset.type;
             typeBtns.forEach(b => b.classList.toggle("active", b === btn));
-            // Reset genre + sort
             filters.genre_id = "";
             filters.sort_by  = "popularity.desc";
             document.querySelectorAll(".sort-tab").forEach(t => t.classList.toggle("active", t.dataset.sort === "popularity.desc"));
@@ -319,11 +318,12 @@ document.addEventListener("DOMContentLoaded", () => {
             isSearchMode    = false;
             isWatchlistMode = false;
             searchInput.value = "";
-            searchInput.placeholder = contentType === "tv" ? "Search TV shows…" : "Search movies…";
+            searchInput.placeholder = contentType === "tv" ? "Search TV shows…"
+                                    : contentType === "anime" ? "Search anime…"
+                                    : "Search movies…";
             searchClear.style.display = "none";
-            loadGenres();
+            if (contentType !== "anime") loadGenres();
             fetchRecommendations();
-            // "In Theatres" is movies-only
             if (contentType === "movie") loadNowPlaying();
             else nowPlayingSection.style.display = "none";
         });
@@ -496,10 +496,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         requestAnimationFrame(() => heroContent.classList.add("visible"));
         document.getElementById("hero-watch-btn").addEventListener("click", () => {
-            if (heroMovieId) openPlayer(heroMovieId, heroTitle, heroQuality, heroBackdrop, contentType);
+            if (heroMovieId) openPlayer(heroMovieId, heroTitle, heroQuality, heroBackdrop, pick.media_type || contentType);
         });
         document.getElementById("hero-info-btn").addEventListener("click", () => {
-            if (heroMovieId) fetchDetails(heroMovieId, contentType);
+            if (heroMovieId) fetchDetails(heroMovieId, pick.media_type || contentType, contentType === "anime");
         });
     }
 
@@ -564,7 +564,8 @@ document.addEventListener("DOMContentLoaded", () => {
             e.stopPropagation();
             const backdropUrl = movie.backdrop_path
                 ? `https://image.tmdb.org/t/p/w1280${movie.backdrop_path}` : null;
-            openPlayer(movie.id, movie.title, quality, backdropUrl, contentType);
+            const playType = contentType === "anime" ? (movie.media_type || "tv") : contentType;
+            openPlayer(movie.id, movie.title, quality, backdropUrl, playType);
         });
         imgWrap.appendChild(playBtn);
 
@@ -604,7 +605,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         overlay.appendChild(metaEl);
 
-        card.addEventListener("click", () => fetchDetails(movie.id, contentType));
+        const detailType = contentType === "anime" ? (movie.media_type || "tv") : contentType;
+        card.addEventListener("click", () => fetchDetails(movie.id, detailType, contentType === "anime"));
         return card;
     }
 
@@ -643,7 +645,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         isTrendingMode = filters.sort_by.startsWith("trending.");
         const isTrending = isTrendingMode;
-        const base       = contentType === "tv" ? "/tv" : "";
+        const base = contentType === "tv" ? "/tv" : contentType === "anime" ? "/anime" : "";
         let fetchPromise;
 
         if (isTrending) {
@@ -703,9 +705,9 @@ document.addEventListener("DOMContentLoaded", () => {
             isWatchlistMode = false;
             setHero(false);
             showSkeletons(10);
-            const searchUrl = contentType === "tv"
-                ? `/tv/search?q=${encodeURIComponent(q)}`
-                : `/search?q=${encodeURIComponent(q)}`;
+            const searchUrl = contentType === "tv"    ? `/tv/search?q=${encodeURIComponent(q)}`
+                            : contentType === "anime" ? `/anime/search?q=${encodeURIComponent(q)}`
+                            : `/search?q=${encodeURIComponent(q)}`;
             fetch(searchUrl)
                 .then(r => { if (!r.ok) throw new Error(); return r.json(); })
                 .then(d => {
@@ -1402,7 +1404,7 @@ document.addEventListener("DOMContentLoaded", () => {
             .catch(() => { modalBody.innerHTML = '<p class="modal-error">Could not load actor info.</p>'; });
     }
 
-    function fetchDetails(id, type) {
+    function fetchDetails(id, type, isAnime = false) {
         pushModalState({ kind: "detail", id, type });
         modalBody.innerHTML = `<div class="modal-loading"><div class="loader"></div></div>`;
         modal.style.display = "flex";
@@ -1715,7 +1717,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         const s  = parseInt(seasonInput?.value  || "1");
                         const ep = parseInt(episodeInput?.value || "1");
                         const qs = new URLSearchParams({
-                            tmdb_id: movie.id, type, quality: res,
+                            tmdb_id: movie.id, type: isAnime ? "anime" : type, quality: res,
                             season: s, episode: ep
                         });
 

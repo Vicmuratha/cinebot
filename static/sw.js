@@ -37,7 +37,7 @@ self.addEventListener("fetch", e => {
 
     // API routes — network first, no caching (live data)
     const apiPaths = ["/recommend", "/search", "/trending", "/movie/", "/tv/",
-                      "/now-playing", "/genres", "/person/", "/download", "/collection/"];
+                      "/now-playing", "/genres", "/person/", "/download", "/collection/", "/anime/"];
     if (apiPaths.some(p => url.pathname.startsWith(p))) {
         e.respondWith(
             fetch(request).catch(() =>
