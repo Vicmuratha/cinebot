@@ -1811,3 +1811,41 @@ main { padding: 1.5rem 5% 5rem; max-width: 1700px; margin: 0 auto; }
     transition: color 0.15s;
 }
 .install-dismiss:hover { color: #fff; }
+
+/* ─── Ad Units ─── */
+.ad-unit {
+    width: 100%;
+    display: flex; flex-direction: column;
+    align-items: center;
+    padding: 0.75rem 5% 0.5rem;
+    box-sizing: border-box;
+}
+/* "Ad" label above each unit */
+.ad-unit::before {
+    content: "Advertisement";
+    display: block; align-self: flex-start;
+    font-size: 0.58rem; text-transform: uppercase;
+    letter-spacing: 1.5px; color: var(--muted);
+    margin-bottom: 0.35rem; opacity: 0.6;
+}
+/* Only show slot if it has real ad content (ins tag populated) */
+.ad-unit:not(:has(ins[data-ad-status])):not(:has(> *:not(:empty))) {
+    display: none;
+}
+/* Modal ad — inherits modal padding, less vertical gap */
+.ad-unit-modal {
+    padding: 0.5rem 0 0.25rem;
+    margin-bottom: 0.5rem;
+}
+/* Slot 1 — between controls and content rows */
+#ad-slot-1 {
+    padding-top: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+}
+/* Slot 2 — between grid and load-more */
+#ad-slot-2 {
+    padding-top: 1.5rem;
+    padding-bottom: 0.5rem;
+    margin-top: 0.5rem;
+}

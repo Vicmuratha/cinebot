@@ -23,6 +23,16 @@
     <link rel="dns-prefetch" href="https://embed.su">
     <link rel="dns-prefetch" href="https://vidlink.pro">
     <link rel="dns-prefetch" href="https://vidsrc.xyz">
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         MONETIZATION — Google AdSense
+         Step 1: Get approved at https://adsense.google.com
+         Step 2: Replace ca-pub-XXXXXXXXXXXXXXXX with your Publisher ID
+         Step 3: Uncomment the script tag below (Auto Ads will then
+                 handle placement automatically across the whole site)
+         Step 4: Replace slot IDs in the manual ad units below
+         ═══════════════════════════════════════════════════════════════ -->
+    <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script> -->
 </head>
 <body class="no-hero">
 
@@ -110,6 +120,20 @@
         </div>
     </div>
 
+    <!-- ── Ad Slot 1: Below filters, high-visibility position ── -->
+    <div class="ad-unit" id="ad-slot-1">
+        <!-- Replace everything inside this div with your ad unit code -->
+        <!-- Example AdSense responsive unit:
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+             data-ad-slot="XXXXXXXXXX"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+        -->
+    </div>
+
     <!-- In Theatres row (movies now playing) -->
     <div id="now-playing-section" class="now-playing-section" style="display:none;">
         <div class="section-row-header">
@@ -130,6 +154,21 @@
     <main>
         <div id="results-grid" class="results-grid"></div>
         <div id="scroll-sentinel" style="height:1px;"></div>
+
+        <!-- ── Ad Slot 2: Below the content grid, above Load More ── -->
+        <div class="ad-unit" id="ad-slot-2">
+            <!-- Replace everything inside this div with your ad unit code -->
+            <!-- Example AdSense responsive unit:
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+                 data-ad-slot="XXXXXXXXXX"
+                 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+            -->
+        </div>
+
         <div id="load-more-wrap" class="load-more-wrap">
             <button id="load-more-btn" class="load-more-btn">
                 <i class="fa-solid fa-chevron-down"></i> Load More

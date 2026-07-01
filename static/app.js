@@ -2151,6 +2151,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 addSection("Episodes", epSection);
             }
 
+            // ── Ad Slot 3: above Similar section in movie modal ──
+            const modalAd = document.createElement("div");
+            modalAd.className = "ad-unit ad-unit-modal";
+            modalAd.id = "ad-slot-3";
+            // Replace innerHTML with your ad unit code, e.g.:
+            // modalAd.innerHTML = `<ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="XXXXXXXXXX" data-ad-format="auto" data-full-width-responsive="true"></ins>`;
+            // if (window.adsbygoogle) (adsbygoogle = window.adsbygoogle || []).push({});
+            body.appendChild(modalAd);
+
             if (similar.length) {
                 const simRow = document.createElement("div");
                 simRow.className = "similar-row";
