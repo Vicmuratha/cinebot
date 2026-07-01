@@ -1397,81 +1397,193 @@ document.addEventListener("DOMContentLoaded", () => {
             .then(r => { if (!r.ok) throw new Error(); return r.json(); })
             .then(p => {
                 modalBody.innerHTML = "";
+                const page = document.createElement("div");
+                page.className = "actor-page";
 
-                const wrap = document.createElement("div");
-                wrap.className = "actor-page";
+                // ── Blurred banner ──
+                const banner = document.createElement("div");
+                banner.className = "actor-banner";
+                if (p.profile_path) {
+                    const bg = document.createElement("img");
+                    bg.className = "actor-banner-img";
+                    bg.src = `https://image.tmdb.org/t/p/w780${p.profile_path}`;
+                    bg.alt = "";
+                    banner.appendChild(bg);
+                } else {
+                    const ph = document.createElement("div");
+                    ph.className = "actor-banner-ph";
+                    banner.appendChild(ph);
+                }
+                const fade = document.createElement("div");
+                fade.className = "actor-banner-fade";
+                banner.appendChild(fade);
+                page.appendChild(banner);
 
-                // Header
-                const header = document.createElement("div");
-                header.className = "actor-header";
+                // ── Scrollable body ──
+                const scroll = document.createElement("div");
+                scroll.className = "actor-scroll";
+
+                // ── Hero row: portrait + name/stats ──
+                const heroRow = document.createElement("div");
+                heroRow.className = "actor-hero-row";
 
                 if (p.profile_path) {
-                    const img = document.createElement("img");
-                    img.src = `https://image.tmdb.org/t/p/w185${p.profile_path}`;
-                    img.alt = p.name; img.className = "actor-photo";
-                    header.appendChild(img);
+                    const photo = document.createElement("img");
+                    photo.className = "actor-photo-lg";
+                    photo.src = `https://image.tmdb.org/t/p/w185${p.profile_path}`;
+                    photo.alt = p.name;
+                    heroRow.appendChild(photo);
+                } else {
+                    const ph = document.createElement("div");
+                    ph.className = "actor-photo-ph-lg";
+                    ph.innerHTML = '<i class="fa-solid fa-user"></i>';
+                    heroRow.appendChild(ph);
                 }
 
-                const info = document.createElement("div");
-                info.className = "actor-info";
+                const heroInfo = document.createElement("div");
+                heroInfo.className = "actor-hero-info";
+
+                if (p.known_for_department) {
+                    const badge = document.createElement("span");
+                    badge.className = "actor-dept-badge";
+                    badge.innerHTML = `<i class="fa-solid fa-star"></i> ${p.known_for_department}`;
+                    heroInfo.appendChild(badge);
+                }
+
                 const nameEl = document.createElement("h2");
-                nameEl.className = "actor-name";
+                nameEl.className = "actor-name-lg";
                 nameEl.textContent = p.name;
-                info.appendChild(nameEl);
+                heroInfo.appendChild(nameEl);
+
+                const stats = document.createElement("div");
+                stats.className = "actor-stats";
                 if (p.birthday) {
-                    const bday = document.createElement("p");
-                    bday.className = "actor-meta";
-                    bday.textContent = `Born ${p.birthday}` + (p.place_of_birth ? ` · ${p.place_of_birth}` : "");
-                    info.appendChild(bday);
+                    const [y, m, d] = p.birthday.split("-").map(Number);
+                    const now = new Date();
+                    let age = now.getFullYear() - y;
+                    if (now.getMonth() + 1 < m || (now.getMonth() + 1 === m && now.getDate() < d)) age--;
+                    const s = document.createElement("span");
+                    s.className = "actor-stat";
+                    s.innerHTML = `<i class="fa-solid fa-cake-candles"></i>`;
+                    s.appendChild(document.createTextNode(` Born ${p.birthday}${!p.deathday ? ` (age ${age})` : ""}`));
+                    stats.appendChild(s);
                 }
+                if (p.deathday) {
+                    const s = document.createElement("span");
+                    s.className = "actor-stat";
+                    s.innerHTML = `<i class="fa-solid fa-cross"></i>`;
+                    s.appendChild(document.createTextNode(` Died ${p.deathday}`));
+                    stats.appendChild(s);
+                }
+                if (p.place_of_birth) {
+                    const s = document.createElement("span");
+                    s.className = "actor-stat";
+                    s.innerHTML = `<i class="fa-solid fa-location-dot"></i>`;
+                    s.appendChild(document.createTextNode(` ${p.place_of_birth}`));
+                    stats.appendChild(s);
+                }
+                const totalCredits = (p.movie_credits?.cast?.length || 0) + (p.tv_credits?.cast?.length || 0);
+                if (totalCredits) {
+                    const s = document.createElement("span");
+                    s.className = "actor-stat";
+                    s.innerHTML = `<i class="fa-solid fa-film"></i>`;
+                    s.appendChild(document.createTextNode(` ${totalCredits} credits`));
+                    stats.appendChild(s);
+                }
+                heroInfo.appendChild(stats);
+                heroRow.appendChild(heroInfo);
+                scroll.appendChild(heroRow);
+
+                // ── Body: bio + filmography ──
+                const body = document.createElement("div");
+                body.className = "actor-body";
+
                 if (p.biography) {
+                    const lbl = document.createElement("div");
+                    lbl.className = "section-label";
+                    lbl.textContent = "Biography";
+                    body.appendChild(lbl);
+
+                    const full = p.biography;
+                    const short = full.length > 600 ? full.slice(0, 600) + "…" : full;
                     const bio = document.createElement("p");
-                    bio.className = "actor-bio";
-                    bio.textContent = p.biography.length > 400 ? p.biography.slice(0, 400) + "…" : p.biography;
-                    info.appendChild(bio);
+                    bio.className = "actor-bio-text";
+                    bio.textContent = short;
+                    body.appendChild(bio);
+
+                    if (full.length > 600) {
+                        let exp = false;
+                        const tog = document.createElement("button");
+                        tog.className = "bio-toggle";
+                        tog.textContent = "Read more";
+                        tog.addEventListener("click", () => {
+                            exp = !exp;
+                            bio.textContent = exp ? full : short;
+                            tog.textContent = exp ? "Read less" : "Read more";
+                        });
+                        body.appendChild(tog);
+                    }
                 }
-                header.appendChild(info);
-                wrap.appendChild(header);
 
-                // Filmography
-                const credits = [...(p.movie_credits?.cast || []), ...(p.tv_credits?.cast || [])]
-                    .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
-                    .slice(0, 20);
-
-                if (credits.length) {
-                    const filmLabel = document.createElement("h3");
-                    filmLabel.className = "actor-filmography-label";
-                    filmLabel.textContent = "Known For";
-                    wrap.appendChild(filmLabel);
-
+                function buildFilmRow(label, items, mediaType) {
+                    if (!items.length) return;
+                    const sec = document.createElement("div");
+                    sec.className = "actor-films-section";
+                    const seclbl = document.createElement("div");
+                    seclbl.className = "section-label";
+                    seclbl.textContent = label;
+                    sec.appendChild(seclbl);
                     const row = document.createElement("div");
-                    row.className = "actor-filmography";
-                    credits.forEach(c => {
+                    row.className = "actor-films-row";
+                    items.forEach(c => {
                         const card = document.createElement("div");
-                        card.className = "actor-film-card";
-                        const itemType = c.media_type || (c.first_air_date ? "tv" : "movie");
+                        card.className = "actor-film-card-v2";
                         if (c.poster_path) {
                             const img = document.createElement("img");
+                            img.className = "film-poster";
                             img.src = `https://image.tmdb.org/t/p/w185${c.poster_path}`;
-                            img.alt = c.title || c.name; img.loading = "lazy";
+                            img.alt = c.title || c.name;
+                            img.loading = "lazy";
                             card.appendChild(img);
                         } else {
                             const ph = document.createElement("div");
-                            ph.className = "actor-film-ph";
+                            ph.className = "film-ph";
+                            ph.innerHTML = '<i class="fa-solid fa-film"></i>';
                             card.appendChild(ph);
                         }
-                        const titleEl = document.createElement("span");
-                        titleEl.textContent = c.title || c.name || "";
-                        card.appendChild(titleEl);
-                        card.addEventListener("click", () => fetchDetails(c.id, itemType));
+                        const t = document.createElement("div");
+                        t.className = "actor-film-title";
+                        t.textContent = c.title || c.name || "";
+                        card.appendChild(t);
+                        const yr = (c.release_date || c.first_air_date || "").split("-")[0];
+                        if (yr) {
+                            const y = document.createElement("div");
+                            y.className = "actor-film-year";
+                            y.textContent = yr;
+                            card.appendChild(y);
+                        }
+                        card.addEventListener("click", () => fetchDetails(c.id, mediaType));
                         row.appendChild(card);
                     });
-                    wrap.appendChild(row);
+                    sec.appendChild(row);
+                    body.appendChild(sec);
                 }
 
-                modalBody.appendChild(wrap);
+                const byPop = arr => [...arr].sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+                buildFilmRow("Movies", byPop(p.movie_credits?.cast || []).slice(0, 14), "movie");
+                buildFilmRow("TV Shows", byPop(p.tv_credits?.cast || []).slice(0, 14), "tv");
+
+                scroll.appendChild(body);
+                page.appendChild(scroll);
+                modalBody.appendChild(page);
             })
-            .catch(() => { modalBody.innerHTML = '<p class="modal-error">Could not load actor info.</p>'; });
+            .catch(() => {
+                modalBody.innerHTML = `
+                    <div class="modal-loading" style="flex-direction:column;gap:1rem;">
+                        <i class="fa-solid fa-circle-exclamation" style="font-size:2rem;color:var(--accent)"></i>
+                        <p style="color:var(--muted);font-size:0.88rem;">Could not load actor info.</p>
+                    </div>`;
+            });
     }
 
     function fetchDetails(id, type, isAnime = false) {
