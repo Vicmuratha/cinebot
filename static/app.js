@@ -790,18 +790,22 @@ document.addEventListener("DOMContentLoaded", () => {
         (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}`,
         (id, s, e) => `https://vidsrc.xyz/embed/tv?tmdb=${id}&season=${s}&episode=${e}`,
     ];
-    // Anime series
+    // Anime series — best working servers for anime (TMDB-ID compatible)
     const ANIME_SOURCES = [
+        // #1 — dedicated /anime endpoint, largest anime-only catalogue
         (id, s, e) => `https://vidsrc.xyz/embed/anime?tmdb=${id}&season=${s}&episode=${e}`,
-        (id, s, e) => `https://vidsrc.me/embed/tv?tmdb=${id}&season=${s}&episode=${e}`,
+        // #2 — embed.su has the deepest anime coverage of all general servers
         (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}`,
+        // #3 — vidsrc.me: stable, broad catalogue
+        (id, s, e) => `https://vidsrc.me/embed/tv?tmdb=${id}&season=${s}&episode=${e}`,
+        // #4 — vidlink.pro: reliable fallback
         (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}`,
     ];
     // Anime movies
     const ANIME_MOVIE_SOURCES = [
         id => `https://vidsrc.xyz/embed/anime?tmdb=${id}`,
-        id => `https://vidsrc.me/embed/movie?tmdb=${id}`,
         id => `https://embed.su/embed/movie/${id}`,
+        id => `https://vidsrc.me/embed/movie?tmdb=${id}`,
         id => `https://vidlink.pro/movie/${id}`,
     ];
 
