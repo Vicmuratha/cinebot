@@ -767,42 +767,42 @@ document.addEventListener("DOMContentLoaded", () => {
     const playerEpGo     = document.getElementById("player-ep-go");
     const srcBtns        = document.querySelectorAll(".player-src-btn");
 
-    // ── Streaming servers (same providers used by Redflix, Sflix, Cataz etc.) ──
+    // ── Streaming servers — tested working, TMDB-ID compatible ──
 
-    // Movies — HD releases
+    // Movies — HD
     const MOVIE_HD_SOURCES = [
-        id => `https://vidsrc.to/embed/movie/${id}`,
+        id => `https://vidsrc.me/embed/movie?tmdb=${id}`,
         id => `https://embed.su/embed/movie/${id}`,
-        id => `https://moviesapi.club/movie/${id}`,
-        id => `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1`,
+        id => `https://vidlink.pro/movie/${id}`,
+        id => `https://vidsrc.xyz/embed/movie?tmdb=${id}`,
     ];
-    // Movies — CAM / new releases (fastest to index)
+    // Movies — CAM / new releases
     const MOVIE_CAM_SOURCES = [
-        id => `https://vidsrc.to/embed/movie/${id}`,
-        id => `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1`,
+        id => `https://vidsrc.me/embed/movie?tmdb=${id}`,
+        id => `https://vidlink.pro/movie/${id}`,
         id => `https://embed.su/embed/movie/${id}`,
-        id => `https://moviesapi.club/movie/${id}`,
+        id => `https://vidsrc.xyz/embed/movie?tmdb=${id}`,
     ];
     // TV series
     const TV_SOURCES = [
-        (id, s, e) => `https://vidsrc.to/embed/tv/${id}/${s}/${e}`,
+        (id, s, e) => `https://vidsrc.me/embed/tv?tmdb=${id}&season=${s}&episode=${e}`,
         (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}`,
-        (id, s, e) => `https://moviesapi.club/tv/${id}-${s}-${e}`,
-        (id, s, e) => `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1&s=${s}&e=${e}`,
+        (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}`,
+        (id, s, e) => `https://vidsrc.xyz/embed/tv?tmdb=${id}&season=${s}&episode=${e}`,
     ];
-    // Anime series — dedicated anime endpoint first, then general servers
+    // Anime series
     const ANIME_SOURCES = [
         (id, s, e) => `https://vidsrc.xyz/embed/anime?tmdb=${id}&season=${s}&episode=${e}`,
-        (id, s, e) => `https://vidsrc.to/embed/tv/${id}/${s}/${e}`,
+        (id, s, e) => `https://vidsrc.me/embed/tv?tmdb=${id}&season=${s}&episode=${e}`,
         (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}`,
-        (id, s, e) => `https://moviesapi.club/tv/${id}-${s}-${e}`,
+        (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}`,
     ];
     // Anime movies
     const ANIME_MOVIE_SOURCES = [
         id => `https://vidsrc.xyz/embed/anime?tmdb=${id}`,
-        id => `https://vidsrc.to/embed/movie/${id}`,
+        id => `https://vidsrc.me/embed/movie?tmdb=${id}`,
         id => `https://embed.su/embed/movie/${id}`,
-        id => `https://moviesapi.club/movie/${id}`,
+        id => `https://vidlink.pro/movie/${id}`,
     ];
 
     let currentItemId   = null;
