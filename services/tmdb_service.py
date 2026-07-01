@@ -531,7 +531,7 @@ class TMDBService:
                 link = yts_best(term, quality)
                 if link: return [link]
 
-        else:  # TV
+        elif item_type == "tv":
             imdb_id = show_name = ""
             try:
                 ext = requests.get(f"{self.base_url}/tv/{tmdb_id}/external_ids",
