@@ -23,8 +23,9 @@ document.addEventListener("DOMContentLoaded", () => {
     let isSearchMode    = false;
     let isWatchlistMode = false;
     let isTrendingMode  = false;
-    let contentType     = "movie";  // "movie" | "tv"
-    let filters = { genre_id: "", year_from: "1990", year_to: "2026", sort_by: "popularity.desc" };
+    let contentType     = "movie";  // "movie" | "tv" | "anime"
+    const THIS_YEAR     = new Date().getFullYear();
+    let filters = { genre_id: "", year_from: "1990", year_to: String(THIS_YEAR), sort_by: "popularity.desc" };
 
     // ─── DOM refs ───
     const resultsGrid  = document.getElementById("results-grid");
@@ -46,6 +47,27 @@ document.addEventListener("DOMContentLoaded", () => {
     const searchClear  = document.getElementById("search-clear");
     const scrollTopBtn = document.getElementById("scroll-top");
     const searchSuggestions = document.getElementById("search-suggestions");
+
+    // ─── Dark / Light mode toggle ───
+    const themeBtn = document.getElementById("theme-toggle");
+    const savedTheme = localStorage.getItem("theme") || "dark";
+    if (savedTheme === "light") document.body.classList.add("light-mode");
+    themeBtn.innerHTML = savedTheme === "light"
+        ? '<i class="fa-solid fa-sun"></i>'
+        : '<i class="fa-solid fa-moon"></i>';
+    themeBtn.addEventListener("click", () => {
+        const isLight = document.body.classList.toggle("light-mode");
+        localStorage.setItem("theme", isLight ? "light" : "dark");
+        themeBtn.innerHTML = isLight
+            ? '<i class="fa-solid fa-sun"></i>'
+            : '<i class="fa-solid fa-moon"></i>';
+    });
+
+    // ─── Dynamic year slider max ───
+    yearTo.max     = THIS_YEAR;
+    yearFrom.max   = THIS_YEAR;
+    yearTo.value   = THIS_YEAR;
+    yearToVal.textContent = THIS_YEAR;
 
     // ─── Scroll header ───
     const headerEl = document.querySelector("header");
@@ -148,7 +170,7 @@ document.addEventListener("DOMContentLoaded", () => {
             info.append(t, s);
             card.appendChild(info);
             card.addEventListener("click", () => {
-                openPlayer(h.id, h.title, h.quality, h.backdrop, h.type, h.season, h.episode);
+                openPlayer(h.id, h.title, h.quality, h.backdrop, h.type, h.season, h.episode, h.isAnime || false);
             });
             continueRow.appendChild(card);
         });
@@ -221,7 +243,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function getWatchlist() { return JSON.parse(localStorage.getItem("watchlist") || "[]"); }
     function isInWatchlist(id) { return getWatchlist().some(m => m.id === id); }
 
-    function toggleWatchlist(movie, btn) {
+    function toggleWatchlist(movie, btn, itemType) {
         let list = getWatchlist();
         if (isInWatchlist(movie.id)) {
             list = list.filter(m => m.id !== movie.id);
@@ -232,6 +254,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
             list.push({
                 id: movie.id, title: movie.title,
+                type: itemType || contentType,
                 poster_path: movie.poster_path,
                 vote_average: movie.vote_average,
                 release_date: movie.release_date,
@@ -574,10 +597,11 @@ document.addEventListener("DOMContentLoaded", () => {
         playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
         playBtn.addEventListener("click", e => {
             e.stopPropagation();
-            const backdropUrl = movie.backdrop_path
+            const backdropUrl  = movie.backdrop_path
                 ? `https://image.tmdb.org/t/p/w1280${movie.backdrop_path}` : null;
-            const isAnimeCard = contentType === "anime";
-            const playType    = isAnimeCard ? (movie.media_type || "tv") : contentType;
+            const effectiveType = movie.type || contentType;
+            const isAnimeCard   = effectiveType === "anime";
+            const playType      = isAnimeCard ? (movie.media_type || "tv") : effectiveType;
             openPlayer(movie.id, movie.title, quality, backdropUrl, playType, 1, 1, isAnimeCard);
         });
         imgWrap.appendChild(playBtn);
@@ -618,8 +642,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         overlay.appendChild(metaEl);
 
-        const detailType = contentType === "anime" ? (movie.media_type || "tv") : contentType;
-        card.addEventListener("click", () => fetchDetails(movie.id, detailType, contentType === "anime"));
+        const effectiveContentType = movie.type || contentType;
+        const isAnimeItem = effectiveContentType === "anime";
+        const detailType  = isAnimeItem ? (movie.media_type || "tv") : effectiveContentType;
+        card.addEventListener("click", () => fetchDetails(movie.id, detailType, isAnimeItem));
         return card;
     }
 
@@ -1128,7 +1154,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // Save to watch history
-        saveToHistory({ id: itemId, type: currentItemType, title, quality, backdrop: backdropUrl, season, episode });
+        saveToHistory({ id: itemId, type: currentItemType, isAnime, title, quality, backdrop: backdropUrl, season, episode });
 
         // Quality badge
         const qMap = { hd: ["HD","q-hd"], ts: ["HD-TS","q-ts"], cam: ["CAM","q-cam"], soon: ["Soon","q-soon"] };
@@ -1456,11 +1482,19 @@ document.addEventListener("DOMContentLoaded", () => {
             apiFetch(detailUrl),
             apiFetch(similarUrl).catch(() => ({ movies: [] }))
         ])
+        .catch(() => {
+            modalBody.innerHTML = `
+                <div class="modal-loading" style="flex-direction:column;gap:1rem;">
+                    <i class="fa-solid fa-circle-exclamation" style="font-size:2rem;color:var(--accent)"></i>
+                    <p style="color:var(--muted);font-size:0.88rem;">Could not load details. Check your connection.</p>
+                </div>`;
+        })
         .then(([movie, sim]) => {
+            if (!movie) return;
             // Normalize TV fields
             const title    = movie.title || movie.name || "";
             const rawDate  = movie.release_date || movie.first_air_date || "";
-            const poster   = movie.poster_path   ? `https://image.tmdb.org/t/p/w342${movie.poster_path}`   : null;
+            const poster   = movie.poster_path   ? `https://image.tmdb.org/t/p/w185${movie.poster_path}`   : null;
             const backdrop = movie.backdrop_path ? `https://image.tmdb.org/t/p/w1280${movie.backdrop_path}` : null;
             const score    = movie.vote_average || 0;
             const year     = rawDate ? rawDate.split("-")[0] : "";
@@ -1541,8 +1575,13 @@ document.addEventListener("DOMContentLoaded", () => {
             const info = document.createElement("div");
             info.className = "modal-info";
 
-            // TV badge
-            if (isTV) {
+            // Content-type badge
+            if (isAnime) {
+                const typeBadge = document.createElement("span");
+                typeBadge.className = "modal-type-badge";
+                typeBadge.innerHTML = '<i class="fa-solid fa-torii-gate"></i> Anime';
+                info.appendChild(typeBadge);
+            } else if (isTV) {
                 const typeBadge = document.createElement("span");
                 typeBadge.className = "modal-type-badge";
                 typeBadge.innerHTML = '<i class="fa-solid fa-tv"></i> TV Series';
@@ -1572,6 +1611,12 @@ document.addEventListener("DOMContentLoaded", () => {
             const sv = document.createElement("span"); sv.className = "score-val"; sv.textContent = score.toFixed(1);
             const sd = document.createElement("span"); sd.className = "score-denom"; sd.textContent = "/ 10";
             ratingDiv.append(starsEl, sv, sd);
+            if (movie.vote_count > 0) {
+                const vc = document.createElement("span");
+                vc.className = "score-count";
+                vc.textContent = `(${movie.vote_count.toLocaleString()})`;
+                ratingDiv.appendChild(vc);
+            }
             info.appendChild(ratingDiv);
 
             // Chips
@@ -1661,7 +1706,8 @@ document.addEventListener("DOMContentLoaded", () => {
             updateHeart();
             modalHeart.addEventListener("click", () => {
                 toggleWatchlist({ id: movie.id, title, poster_path: movie.poster_path,
-                    release_date: rawDate, vote_average: score }, modalHeart);
+                    release_date: rawDate, vote_average: score }, modalHeart,
+                    isAnime ? "anime" : type);
                 updateHeart();
             });
             btnRow.appendChild(modalHeart);

@@ -684,6 +684,7 @@ body.light-mode .close-btn:hover { background: #fff; }
 .stars { color: var(--gold); font-size: 0.73rem; letter-spacing: 1px; }
 .score-val { font-size: 0.96rem; font-weight: 700; }
 .score-denom { font-size: 0.72rem; color: var(--muted); }
+.score-count { font-size: 0.68rem; color: var(--muted); }
 
 .modal-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 0.75rem; }
 .modal-chip {
