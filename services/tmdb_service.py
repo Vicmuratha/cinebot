@@ -4,14 +4,26 @@ import requests
 from config import TMDB_API_KEY, BASE_URL
 
 _cache = {}
-_CACHE_TTL = 300  # seconds
+
+# Longer TTLs for stable data — reduces outbound TMDB calls significantly
+def _ttl_for(url):
+    if "/genre/"       in url: return 3600   # genres never change
+    if "/collection/"  in url: return 3600   # franchise lists are static
+    if "/person/"      in url: return 3600   # actor info rarely changes
+    if "/movie/"       in url: return 1800   # movie details: 30 min
+    if "/tv/"          in url: return 1800   # TV details: 30 min
+    if "/trending/"    in url: return 600    # trending: 10 min
+    if "/discover/"    in url: return 600    # browse pages: 10 min
+    if "/now_playing"  in url: return 600    # theatres list: 10 min
+    if "/search/"      in url: return 300    # search: 5 min
+    return 600
 
 def _cached_get(url, params):
     key = (url, tuple(sorted((k, v) for k, v in params.items() if k != "api_key")))
     entry = _cache.get(key)
-    if entry and time.time() - entry["ts"] < _CACHE_TTL:
+    if entry and time.time() - entry["ts"] < _ttl_for(url):
         return entry["data"]
-    r = requests.get(url, params=params)
+    r = requests.get(url, params=params, timeout=8)
     r.raise_for_status()
     data = r.json()
     _cache[key] = {"data": data, "ts": time.time()}

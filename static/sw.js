@@ -1,4 +1,4 @@
-const CACHE = "cinebot-v2";
+const CACHE = "cinebot-v3";
 
 // App shell — files that make the UI render without network
 const SHELL = [

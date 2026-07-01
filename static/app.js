@@ -1,5 +1,18 @@
 document.addEventListener("DOMContentLoaded", () => {
 
+    // ─── Browser-side API cache (2-min TTL) — instant repeat fetches ───
+    const _bc = new Map();
+    async function apiFetch(url, opts) {
+        const key = url + (opts?.body || "");
+        const hit = _bc.get(key);
+        if (hit && Date.now() - hit.t < 120_000) return hit.d;
+        const r = await fetch(url, opts);
+        if (!r.ok) throw new Error(r.status);
+        const d = await r.json();
+        _bc.set(key, { d, t: Date.now() });
+        return d;
+    }
+
     // ─── State ───
     let heroMovieId     = null;
     let heroTitle       = null;
@@ -63,8 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const continueRow       = document.getElementById("continue-row");
 
     function loadNowPlaying() {
-        fetch("/now-playing")
-            .then(r => r.ok ? r.json() : { movies: [] })
+        apiFetch("/now-playing")
             .then(({ movies }) => {
                 if (!movies.length) return;
                 nowPlayingSection.style.display = "block";
@@ -267,8 +279,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ─── Genre pills ───
     function loadGenres() {
         const endpoint = contentType === "tv" ? "/tv/genres" : "/genres";
-        fetch(endpoint)
-            .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+        apiFetch(endpoint)
             .then(({ genres }) => {
                 // Remove all dynamic genre pills, keep All + My List
                 [...genrePills.querySelectorAll(".genre-pill:not([data-id=''][data-keep])")]
@@ -506,7 +517,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ─── Card factory ───
     function createCard(movie, index, showRank = false) {
-        const poster = movie.poster_path ? `https://image.tmdb.org/t/p/w342${movie.poster_path}` : null;
+        const poster = movie.poster_path ? `https://image.tmdb.org/t/p/w185${movie.poster_path}` : null;
         const year   = movie.release_date ? movie.release_date.split("-")[0] : "";
         const score  = movie.vote_average || 0;
 
@@ -652,17 +663,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (isTrending) {
             const win = filters.sort_by.split(".")[1];
-            fetchPromise = fetch(`${base}/trending?window=${win}&page=${currentPage}`);
+            fetchPromise = apiFetch(`${base}/trending?window=${win}&page=${currentPage}`);
         } else {
-            fetchPromise = fetch(`${base}/recommend`, {
+            const body = JSON.stringify({ ...filters, page: currentPage });
+            fetchPromise = apiFetch(`${base}/recommend`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...filters, page: currentPage })
+                body
             });
         }
 
         fetchPromise
-            .then(r => { if (!r.ok) throw new Error(); return r.json(); })
             .then(d => {
                 const items = (d.movies || []).map(normalizeItem);
                 reset ? renderMovies(items) : appendMovies(items);
@@ -710,8 +721,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const searchUrl = contentType === "tv"    ? `/tv/search?q=${encodeURIComponent(q)}`
                             : contentType === "anime" ? `/anime/search?q=${encodeURIComponent(q)}`
                             : `/search?q=${encodeURIComponent(q)}`;
-            fetch(searchUrl)
-                .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+            apiFetch(searchUrl)
                 .then(d => {
                     resultsGrid.innerHTML = "";
                     const items = (d.movies || []).map(normalizeItem);
@@ -1436,8 +1446,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const similarUrl  = isTV ? `/tv/${id}/similar` : `/movie/${id}/similar`;
 
         Promise.all([
-            fetch(detailUrl).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
-            fetch(similarUrl).then(r => r.ok ? r.json() : { movies: [] })
+            apiFetch(detailUrl),
+            apiFetch(similarUrl).catch(() => ({ movies: [] }))
         ])
         .then(([movie, sim]) => {
             // Normalize TV fields
