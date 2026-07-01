@@ -259,25 +259,33 @@ class TMDBService:
             print(f"Error discovering anime: {e}")
             return []
 
+    def _is_anime(self, item):
+        """True only for Japanese animation — excludes western cartoons."""
+        return (
+            16 in item.get("genre_ids", []) and
+            item.get("original_language") == "ja"
+        )
+
     def search_anime(self, query):
         """Search TMDB for anime (TV + movies) by title."""
         if not query:
             return []
         try:
             results = []
-            # TV anime search
+            # TV anime: must be Japanese animation
             tv = _cached_get(f"{self.base_url}/search/tv",
                              {"api_key": self.api_key, "query": query, "page": 1}).get("results", [])
-            for r in tv[:15]:
-                r["media_type"] = "tv"
-                r["title"] = r.get("name", "")
-                r["release_date"] = r.get("first_air_date", "")
-                results.append(r)
-            # Anime movie search
+            for r in tv:
+                if self._is_anime(r):
+                    r["media_type"] = "tv"
+                    r["title"] = r.get("name", "")
+                    r["release_date"] = r.get("first_air_date", "")
+                    results.append(r)
+            # Anime movies: Japanese animation only
             movies = _cached_get(f"{self.base_url}/search/movie",
                                  {"api_key": self.api_key, "query": query, "page": 1}).get("results", [])
-            for r in movies[:8]:
-                if 16 in r.get("genre_ids", []):  # Animation genre only
+            for r in movies:
+                if self._is_anime(r):
                     r["media_type"] = "movie"
                     results.append(r)
             return results[:15]
@@ -286,16 +294,20 @@ class TMDBService:
             return []
 
     def trending_anime(self, window="day", page=1):
-        """Trending anime from TMDB (animation Japanese TV)."""
+        """Trending anime from TMDB — strictly Japanese animation."""
         try:
-            data = _cached_get(
-                f"{self.base_url}/trending/tv/{window}",
-                {"api_key": self.api_key, "page": page}
-            )
-            results = [
-                self._normalize_anime(r) for r in data.get("results", [])
-                if 16 in r.get("genre_ids", [])
-            ]
+            # Fetch multiple pages so we have enough after filtering out western cartoons
+            results = []
+            for pg in range(1, 4):
+                data = _cached_get(
+                    f"{self.base_url}/trending/tv/{window}",
+                    {"api_key": self.api_key, "page": pg}
+                )
+                for r in data.get("results", []):
+                    if self._is_anime(r):
+                        results.append(self._normalize_anime(r))
+                if len(results) >= 20:
+                    break
             return results[:20]
         except Exception as e:
             print(f"Error fetching trending anime: {e}")
