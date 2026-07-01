@@ -17,19 +17,6 @@
     --ease:        cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-body.light-mode {
-    --bg:          #faf8f5;
-    --surface:     #ffffff;
-    --surface2:    #f4f0ea;
-    --text:        #1a1510;
-    --muted:       #7a6a58;
-    --accent:      #d97706;
-    --accent-dim:  rgba(217,119,6,0.1);
-    --accent-glow: rgba(217,119,6,0.2);
-    --border:      #e8e0d4;
-    --skel-base:   #ede8e0;
-    --skel-shine:  #f4f0ea;
-}
 
 /* ─── Reset ─── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -57,7 +44,6 @@ header.scrolled {
     backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
     border-bottom-color: var(--border);
 }
-body.light-mode header.scrolled { background: rgba(250, 248, 245, 0.92); }
 body.no-hero header { background: var(--bg); border-bottom-color: var(--border); }
 
 /* Logo */
@@ -95,7 +81,6 @@ body.no-hero header { background: var(--bg); border-bottom-color: var(--border);
     border-radius: 100px;
     transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
-body.light-mode .search-container input {
     background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.1);
 }
 .search-container input::placeholder { color: var(--muted); }
@@ -105,28 +90,11 @@ body.light-mode .search-container input {
     border-color: rgba(245,158,11,0.45);
     box-shadow: 0 0 0 3px rgba(245,158,11,0.1);
 }
-body.light-mode .search-container input:focus {
     background: rgba(217,119,6,0.05);
     border-color: rgba(217,119,6,0.4);
     box-shadow: 0 0 0 3px rgba(217,119,6,0.08);
 }
 
-#theme-toggle {
-    width: 34px; height: 34px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    background: none; border: none; color: var(--muted);
-    font-size: 0.92rem; cursor: pointer;
-    transition: color 0.2s, transform 0.2s;
-}
-#theme-toggle:hover { color: var(--accent); transform: scale(1.15) rotate(12deg); }
-
-/* ─── Hero ─── */
-#hero {
-    position: relative; width: 100%; height: 78vh; min-height: 480px;
-    margin-top: calc(-1 * var(--header-h));
-    overflow: hidden; background: #03030a;
-    display: flex; align-items: flex-end;
-}
 .hero-img {
     position: absolute; inset: 0; width: 100%; height: 100%;
     object-fit: cover; object-position: center 20%;
@@ -192,7 +160,6 @@ body.light-mode .search-container input:focus {
     backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
     border-bottom: 1px solid var(--border);
 }
-body.light-mode .controls-bar { background: rgba(245, 244, 252, 0.92); }
 
 .controls-top {
     display: flex; align-items: center; justify-content: space-between;
@@ -569,7 +536,6 @@ main { padding: 1.5rem 5% 5rem; max-width: 1700px; margin: 0 auto; }
     backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
     align-items: center; justify-content: center; padding: 1.5rem;
 }
-body.light-mode .modal { background: rgba(240, 238, 252, 0.88); }
 
 .modal-content {
     background: var(--surface); width: 100%; max-width: 880px;
@@ -581,7 +547,6 @@ body.light-mode .modal { background: rgba(240, 238, 252, 0.88); }
     animation: modalIn 0.24s var(--ease);
     display: flex; flex-direction: column; overflow: hidden;
 }
-body.light-mode .modal-content {
     box-shadow: 0 0 0 1px var(--border), 0 40px 80px rgba(0,0,0,0.12);
 }
 
@@ -601,8 +566,6 @@ body.light-mode .modal-content {
     transition: all 0.2s;
 }
 .close-btn:hover { background: rgba(0,0,0,0.82); transform: scale(1.1); color: #fff; }
-body.light-mode .close-btn { color: rgba(0,0,0,0.65); background: rgba(255,255,255,0.82); }
-body.light-mode .close-btn:hover { background: #fff; }
 
 /* ── Modal back button ── */
 .modal-back-btn {
@@ -1425,10 +1388,6 @@ body.light-mode .close-btn:hover { background: #fff; }
     to   { transform: scale(1); opacity: 1; }
 }
 
-/* ─── Smooth Theme Transitions ─── */
-body, header, .controls-bar, .modal-content, .movie-card, input, button {
-    transition: background-color 0.25s, color 0.25s, border-color 0.25s;
-}
 
 /* ─── Responsive ─── */
 @media (max-width: 960px) {
@@ -1548,7 +1507,6 @@ body, header, .controls-bar, .modal-content, .movie-card, input, button {
     transition: color 0.15s, background 0.15s;
 }
 .search-clear:hover { color: var(--text); background: rgba(255,255,255,0.1); }
-body.light-mode .search-clear:hover { background: rgba(0,0,0,0.08); }
 
 .search-suggestions {
     position: absolute; top: calc(100% + 6px); left: 0; right: 0;

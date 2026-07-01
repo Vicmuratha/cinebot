@@ -48,21 +48,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const scrollTopBtn = document.getElementById("scroll-top");
     const searchSuggestions = document.getElementById("search-suggestions");
 
-    // ─── Dark / Light mode toggle ───
-    const themeBtn = document.getElementById("theme-toggle");
-    const savedTheme = localStorage.getItem("theme") || "dark";
-    if (savedTheme === "light") document.body.classList.add("light-mode");
-    themeBtn.innerHTML = savedTheme === "light"
-        ? '<i class="fa-solid fa-sun"></i>'
-        : '<i class="fa-solid fa-moon"></i>';
-    themeBtn.addEventListener("click", () => {
-        const isLight = document.body.classList.toggle("light-mode");
-        localStorage.setItem("theme", isLight ? "light" : "dark");
-        themeBtn.innerHTML = isLight
-            ? '<i class="fa-solid fa-sun"></i>'
-            : '<i class="fa-solid fa-moon"></i>';
-    });
-
     // ─── Dynamic year slider max ───
     yearTo.max     = THIS_YEAR;
     yearFrom.max   = THIS_YEAR;
