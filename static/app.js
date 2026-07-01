@@ -496,7 +496,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         requestAnimationFrame(() => heroContent.classList.add("visible"));
         document.getElementById("hero-watch-btn").addEventListener("click", () => {
-            if (heroMovieId) openPlayer(heroMovieId, heroTitle, heroQuality, heroBackdrop, pick.media_type || contentType);
+            if (heroMovieId) openPlayer(heroMovieId, heroTitle, heroQuality, heroBackdrop,
+                pick.media_type || contentType, 1, 1, contentType === "anime");
         });
         document.getElementById("hero-info-btn").addEventListener("click", () => {
             if (heroMovieId) fetchDetails(heroMovieId, pick.media_type || contentType, contentType === "anime");
@@ -564,8 +565,9 @@ document.addEventListener("DOMContentLoaded", () => {
             e.stopPropagation();
             const backdropUrl = movie.backdrop_path
                 ? `https://image.tmdb.org/t/p/w1280${movie.backdrop_path}` : null;
-            const playType = contentType === "anime" ? (movie.media_type || "tv") : contentType;
-            openPlayer(movie.id, movie.title, quality, backdropUrl, playType);
+            const isAnimeCard = contentType === "anime";
+            const playType    = isAnimeCard ? (movie.media_type || "tv") : contentType;
+            openPlayer(movie.id, movie.title, quality, backdropUrl, playType, 1, 1, isAnimeCard);
         });
         imgWrap.appendChild(playBtn);
 
@@ -776,9 +778,23 @@ document.addEventListener("DOMContentLoaded", () => {
         (id, s, e) => `https://vidsrc.xyz/embed/tv?tmdb=${id}&season=${s}&episode=${e}`,
         (id, s, e) => `https://www.2embed.cc/embedtv/${id}?s=${s}&e=${e}`,
     ];
+    // Anime-specific servers (ordered best→fallback for anime content)
+    const ANIME_SOURCES = [
+        (id, s, e) => `https://vidsrc.xyz/embed/anime?tmdb=${id}&season=${s}&episode=${e}`,
+        (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}`,
+        (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}`,
+        (id, s, e) => `https://vidsrc.me/embed/tv?tmdb=${id}&season=${s}&episode=${e}`,
+    ];
+    const ANIME_MOVIE_SOURCES = [
+        id => `https://vidsrc.xyz/embed/anime?tmdb=${id}`,
+        id => `https://embed.su/embed/movie/${id}`,
+        id => `https://vidlink.pro/movie/${id}`,
+        id => `https://vidsrc.me/embed/movie?tmdb=${id}`,
+    ];
 
     let currentItemId   = null;
     let currentItemType = "movie";
+    let currentIsAnime  = false;
     let activeSources   = MOVIE_HD_SOURCES;
     let activeSource    = 0;
     let autoSwitchTimer = null;
@@ -1052,7 +1068,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (currentItemType === "tv") {
             const s = parseInt(playerSeason.value) || 1;
             const e = parseInt(playerEpisode.value) || 1;
-            return TV_SOURCES[index](currentItemId, s, e);
+            return (currentIsAnime ? ANIME_SOURCES : TV_SOURCES)[index](currentItemId, s, e);
         }
         return activeSources[index](currentItemId);
     }
@@ -1071,11 +1087,16 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 80);
     }
 
-    function openPlayer(itemId, title, quality, backdropUrl, type, season = 1, episode = 1) {
+    function openPlayer(itemId, title, quality, backdropUrl, type, season = 1, episode = 1, isAnime = false) {
         currentItemId   = itemId;
         currentItemType = type || "movie";
+        currentIsAnime  = isAnime;
         activeSource    = parseInt(localStorage.getItem("preferredSource") || "0");
-        activeSources   = (quality === "hd") ? MOVIE_HD_SOURCES : MOVIE_CAM_SOURCES;
+        if (isAnime) {
+            activeSources = currentItemType === "tv" ? ANIME_SOURCES : ANIME_MOVIE_SOURCES;
+        } else {
+            activeSources = (quality === "hd") ? MOVIE_HD_SOURCES : MOVIE_CAM_SOURCES;
+        }
 
         playerBg.style.backgroundImage = backdropUrl ? `url(${backdropUrl})` : "none";
         playerTitle.textContent = title || "";
@@ -1598,7 +1619,7 @@ document.addEventListener("DOMContentLoaded", () => {
             watchBtn.className = "watch-btn";
             watchBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
             watchBtn.appendChild(document.createTextNode(isTV ? " Watch S1E1" : " Watch Now"));
-            watchBtn.addEventListener("click", () => openPlayer(movie.id, title, quality, backdrop, type));
+            watchBtn.addEventListener("click", () => openPlayer(movie.id, title, quality, backdrop, type, 1, 1, isAnime));
             btnRow.appendChild(watchBtn);
 
             // Trailer button — plays in-app
@@ -1947,7 +1968,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
                                 playBtn.addEventListener("click", () => {
                                     closeModal();
-                                    openPlayer(movie.id, title, quality, backdrop, "tv", seasonNum, ep.episode_number);
+                                    openPlayer(movie.id, title, quality, backdrop, "tv", seasonNum, ep.episode_number, isAnime);
                                 });
                                 row.append(thumb, info, playBtn);
                                 epList.appendChild(row);
