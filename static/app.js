@@ -1548,7 +1548,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 buildFilmRow("Movies", byPop(p.movie_credits?.cast || []).slice(0, 14), "movie");
                 buildFilmRow("TV Shows", byPop(p.tv_credits?.cast || []).slice(0, 14), "tv");
 
-                modalBody.appendChild(page);
+                // Use same modal-inner → modal-scroll pattern as movie modal
+                // so the content scrolls correctly inside the clipped #modal-body
+                const inner = document.createElement("div");
+                inner.className = "modal-inner";
+                const scroll = document.createElement("div");
+                scroll.className = "modal-scroll";
+                scroll.appendChild(page);
+                inner.appendChild(scroll);
+                modalBody.appendChild(inner);
             })
             .catch(() => {
                 modalBody.innerHTML = `
