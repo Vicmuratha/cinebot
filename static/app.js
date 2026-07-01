@@ -1400,61 +1400,48 @@ document.addEventListener("DOMContentLoaded", () => {
                 const page = document.createElement("div");
                 page.className = "actor-page";
 
-                // ── Blurred banner ──
-                const banner = document.createElement("div");
-                banner.className = "actor-banner";
+                // ── Full-height portrait cover ──
+                const cover = document.createElement("div");
+                cover.className = "actor-cover";
                 if (p.profile_path) {
-                    const bg = document.createElement("img");
-                    bg.className = "actor-banner-img";
-                    bg.src = `https://image.tmdb.org/t/p/w780${p.profile_path}`;
-                    bg.alt = "";
-                    banner.appendChild(bg);
+                    const img = document.createElement("img");
+                    img.className = "actor-cover-img";
+                    // Use w780 for a sharper image at modal width
+                    img.src = `https://image.tmdb.org/t/p/w780${p.profile_path}`;
+                    img.alt = p.name;
+                    cover.appendChild(img);
                 } else {
                     const ph = document.createElement("div");
-                    ph.className = "actor-banner-ph";
-                    banner.appendChild(ph);
+                    ph.className = "actor-cover-ph";
+                    ph.innerHTML = '<i class="fa-solid fa-user"></i>';
+                    cover.appendChild(ph);
                 }
-                const fade = document.createElement("div");
-                fade.className = "actor-banner-fade";
-                banner.appendChild(fade);
-                page.appendChild(banner);
+                const overlay = document.createElement("div");
+                overlay.className = "actor-cover-overlay";
+                cover.appendChild(overlay);
+
+                // Name + department badge over the cover gradient
+                const coverInfo = document.createElement("div");
+                coverInfo.className = "actor-cover-info";
+                if (p.known_for_department) {
+                    const badge = document.createElement("span");
+                    badge.className = "actor-dept-badge";
+                    badge.innerHTML = `<i class="fa-solid fa-star"></i> ${p.known_for_department}`;
+                    coverInfo.appendChild(badge);
+                    coverInfo.appendChild(document.createElement("br"));
+                }
+                const nameEl = document.createElement("h2");
+                nameEl.className = "actor-name-lg";
+                nameEl.textContent = p.name;
+                coverInfo.appendChild(nameEl);
+                cover.appendChild(coverInfo);
+                page.appendChild(cover);
 
                 // ── Scrollable body ──
                 const scroll = document.createElement("div");
                 scroll.className = "actor-scroll";
 
-                // ── Hero row: portrait + name/stats ──
-                const heroRow = document.createElement("div");
-                heroRow.className = "actor-hero-row";
-
-                if (p.profile_path) {
-                    const photo = document.createElement("img");
-                    photo.className = "actor-photo-lg";
-                    photo.src = `https://image.tmdb.org/t/p/w185${p.profile_path}`;
-                    photo.alt = p.name;
-                    heroRow.appendChild(photo);
-                } else {
-                    const ph = document.createElement("div");
-                    ph.className = "actor-photo-ph-lg";
-                    ph.innerHTML = '<i class="fa-solid fa-user"></i>';
-                    heroRow.appendChild(ph);
-                }
-
-                const heroInfo = document.createElement("div");
-                heroInfo.className = "actor-hero-info";
-
-                if (p.known_for_department) {
-                    const badge = document.createElement("span");
-                    badge.className = "actor-dept-badge";
-                    badge.innerHTML = `<i class="fa-solid fa-star"></i> ${p.known_for_department}`;
-                    heroInfo.appendChild(badge);
-                }
-
-                const nameEl = document.createElement("h2");
-                nameEl.className = "actor-name-lg";
-                nameEl.textContent = p.name;
-                heroInfo.appendChild(nameEl);
-
+                // Stats row (below cover, above bio)
                 const stats = document.createElement("div");
                 stats.className = "actor-stats";
                 if (p.birthday) {
@@ -1490,9 +1477,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     s.appendChild(document.createTextNode(` ${totalCredits} credits`));
                     stats.appendChild(s);
                 }
-                heroInfo.appendChild(stats);
-                heroRow.appendChild(heroInfo);
-                scroll.appendChild(heroRow);
+                scroll.appendChild(stats);
 
                 // ── Body: bio + filmography ──
                 const body = document.createElement("div");
