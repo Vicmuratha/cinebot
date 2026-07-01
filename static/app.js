@@ -54,10 +54,15 @@ document.addEventListener("DOMContentLoaded", () => {
     yearTo.value   = THIS_YEAR;
     yearToVal.textContent = THIS_YEAR;
 
-    // ─── Scroll header ───
+    // ─── Scroll: header + hero parallax ───
     const headerEl = document.querySelector("header");
     window.addEventListener("scroll", () => {
-        headerEl.classList.toggle("scrolled", window.scrollY > 20);
+        const sy = window.scrollY;
+        headerEl.classList.toggle("scrolled", sy > 20);
+        // Parallax: image drifts at 28% of scroll speed
+        if (heroSection.style.display !== "none") {
+            heroImg.style.transform = `translateY(${sy * 0.28}px)`;
+        }
     }, { passive: true });
 
     // ─── Scroll to top ───
@@ -474,6 +479,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ─── Hero ───
+    function getGenreNames(ids = []) {
+        return ids.slice(0, 3).map(id => {
+            const pill = genrePills.querySelector(`[data-id="${id}"]`);
+            return pill ? pill.textContent.trim() : null;
+        }).filter(Boolean);
+    }
+
     function renderHero(movies) {
         if (!movies || !movies.length) { setHero(false); return; }
 
@@ -487,29 +499,38 @@ document.addEventListener("DOMContentLoaded", () => {
         if (pick.backdrop_path) {
             const url = `https://image.tmdb.org/t/p/original${pick.backdrop_path}`;
             heroImg.classList.remove("visible");
+            heroImg.style.transform = "";
             heroImg.onload = () => heroImg.classList.add("visible");
             heroImg.src = url;
-            // onload doesn't fire for cached images; handle that case
             if (heroImg.complete && heroImg.naturalWidth > 0) heroImg.classList.add("visible");
         } else {
             heroImg.classList.remove("visible");
         }
 
+        const year       = pick.release_date ? pick.release_date.split("-")[0] : "";
+        const score      = (pick.vote_average || 0).toFixed(1);
+        const genreNames = getGenreNames(pick.genre_ids || []);
+
+        const genresHTML = genreNames.length
+            ? `<div class="hero-genres">${genreNames.map(g => `<span class="hero-genre-chip">${g}</span>`).join("")}</div>`
+            : "";
+
         heroContent.classList.remove("visible");
         heroContent.innerHTML = `
-            <div class="hero-badge"><i class="fa-solid fa-fire-flame-curved"></i> Featured</div>
+            <div class="hero-badge">Featured</div>
             <h2 class="hero-title">${pick.title}</h2>
             <div class="hero-meta">
-                <span class="hero-score"><i class="fa-solid fa-star"></i> ${(pick.vote_average || 0).toFixed(1)}</span>
-                ${pick.release_date ? `<span>${pick.release_date.split("-")[0]}</span>` : ""}
+                <span class="hero-score"><i class="fa-solid fa-star"></i> ${score}</span>
+                ${year ? `<span class="hero-meta-sep">·</span><span>${year}</span>` : ""}
             </div>
+            ${genresHTML}
             ${pick.overview ? `<p class="hero-overview">${pick.overview}</p>` : ""}
             <div class="hero-actions">
                 <button class="hero-btn hero-watch" id="hero-watch-btn">
                     <i class="fa-solid fa-play"></i> Watch Now
                 </button>
                 <button class="hero-btn hero-info" id="hero-info-btn">
-                    <i class="fa-solid fa-circle-info"></i> Info
+                    <i class="fa-solid fa-circle-info"></i> More Info
                 </button>
             </div>`;
 
