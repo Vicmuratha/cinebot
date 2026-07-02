@@ -44,7 +44,7 @@
         <div class="header-actions">
             <div class="search-container">
                 <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                <input type="text" id="search" placeholder="Search movies…" autocomplete="off" spellcheck="false">
+                <input type="text" id="search" placeholder="Search movies… (press /)" autocomplete="off" spellcheck="false">
                 <button id="search-clear" class="search-clear" aria-label="Clear search" style="display:none;"><i class="fa-solid fa-xmark"></i></button>
                 <div id="search-suggestions" class="search-suggestions" style="display:none;"></div>
             </div>
@@ -318,6 +318,25 @@
             </button>
         </div>
     </div>
+
+    <!-- Mobile bottom navigation — replaces type toggle on small screens -->
+    <nav class="mobile-bottom-nav" id="mobile-bottom-nav" aria-label="Main navigation">
+        <button class="mbn-tab active" data-type="movie">
+            <i class="fa-solid fa-film"></i><span>Movies</span>
+        </button>
+        <button class="mbn-tab" data-type="tv">
+            <i class="fa-solid fa-tv"></i><span>TV</span>
+        </button>
+        <button class="mbn-tab" data-type="anime">
+            <i class="fa-solid fa-torii-gate"></i><span>Anime</span>
+        </button>
+        <button class="mbn-tab" id="mbn-search-btn">
+            <i class="fa-solid fa-magnifying-glass"></i><span>Search</span>
+        </button>
+        <button class="mbn-tab" id="mbn-watchlist-btn">
+            <i class="fa-solid fa-heart"></i><span>My List</span>
+        </button>
+    </nav>
 
     <button id="scroll-top" class="scroll-top-btn" aria-label="Back to top" style="display:none;">
         <i class="fa-solid fa-arrow-up"></i>

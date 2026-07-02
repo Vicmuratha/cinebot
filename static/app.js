@@ -71,6 +71,51 @@ document.addEventListener("DOMContentLoaded", () => {
     }, { passive: true });
     scrollTopBtn.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 
+    // ─── Keyboard shortcut: / focuses search ───
+    window.addEventListener("keydown", e => {
+        if (e.key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            const tag = document.activeElement?.tagName;
+            if (tag !== "INPUT" && tag !== "TEXTAREA" && tag !== "SELECT") {
+                e.preventDefault();
+                searchInput.focus();
+                searchInput.select();
+            }
+        }
+    });
+
+    // ─── Mobile bottom navigation ───
+    const mobileNav = document.getElementById("mobile-bottom-nav");
+    const mbnTabs   = mobileNav?.querySelectorAll(".mbn-tab[data-type]");
+
+    function syncMobileNav(type) {
+        mbnTabs?.forEach(t => t.classList.toggle("active", t.dataset.type === type));
+    }
+
+    mbnTabs?.forEach(tab => {
+        tab.addEventListener("click", () => {
+            const desktopBtn = document.querySelector(`.type-btn[data-type="${tab.dataset.type}"]`);
+            desktopBtn?.click();
+        });
+    });
+
+    document.getElementById("mbn-search-btn")?.addEventListener("click", () => {
+        searchInput.focus();
+        searchInput.select();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    document.getElementById("mbn-watchlist-btn")?.addEventListener("click", () => {
+        document.querySelector('.genre-pill[data-id="watchlist"]')?.click();
+    });
+
+    // Patch type-toggle clicks to also sync the mobile nav
+    typeBtns.forEach(btn => {
+        btn.addEventListener("click", () => syncMobileNav(btn.dataset.type));
+    });
+
+    // ─── Scroll position memory: restore after modal closes ───
+    let _savedScroll = 0;
+
     // ─── Search clear ───
     searchClear.addEventListener("click", () => {
         searchInput.value = "";
@@ -169,7 +214,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("clear-history").addEventListener("click", () => {
         localStorage.removeItem("watchHistory");
         renderContinueRow();
-        showToast("Watch history cleared");
+        showToast("Watch history cleared", "info");
     });
 
     renderContinueRow();
@@ -239,7 +284,7 @@ document.addEventListener("DOMContentLoaded", () => {
             list = list.filter(m => m.id !== movie.id);
             btn.className = "heart-btn";
             btn.innerHTML = '<i class="fa-regular fa-heart"></i>';
-            showToast("Removed from My List");
+            showToast("Removed from My List", "info");
             if (isWatchlistMode) renderWatchlist();
         } else {
             list.push({
@@ -252,7 +297,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             btn.className = "heart-btn active";
             btn.innerHTML = '<i class="fa-solid fa-heart"></i>';
-            showToast("Added to My List");
+            showToast("Added to My List", "success");
         }
         localStorage.setItem("watchlist", JSON.stringify(list));
         updateWatchlistBadge();
@@ -450,25 +495,39 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    function showToast(msg) {
+    const TOAST_ICONS = {
+        success: "fa-circle-check",
+        error:   "fa-circle-xmark",
+        info:    "fa-circle-info",
+        warn:    "fa-triangle-exclamation",
+    };
+    function showToast(msg, type = "info") {
+        const icon = TOAST_ICONS[type] || TOAST_ICONS.info;
         const el = document.createElement("div");
-        el.className = "toast";
-        el.textContent = msg;
+        el.className = `toast toast-${type}`;
+        el.innerHTML = `<i class="fa-solid ${icon} toast-icon"></i><span>${msg}</span>`;
         document.getElementById("toast-container").appendChild(el);
         setTimeout(() => {
             el.style.animation = "toastOut 0.28s ease forwards";
             setTimeout(() => el.remove(), 280);
-        }, 3200);
+        }, 3000);
     }
 
-    function showError(msg) {
+    function showError(msg, { icon = "fa-circle-exclamation", action = null } = {}) {
         setHero(false);
+        const btnHtml = action
+            ? `<button class="empty-state-btn" id="empty-action-btn">${action.label}</button>`
+            : "";
         resultsGrid.innerHTML = `
             <div class="empty-state">
-                <i class="fa-solid fa-circle-exclamation fa-3x"></i>
-                <h2>Nothing here</h2>
-                <p>${msg}</p>
+                <i class="fa-solid ${icon}"></i>
+                <h2>${msg}</h2>
+                <p>Try adjusting your filters or searching for something else.</p>
+                ${btnHtml}
             </div>`;
+        if (action) {
+            document.getElementById("empty-action-btn")?.addEventListener("click", action.fn);
+        }
         loadMoreWrap.style.display = "none";
     }
 
@@ -658,7 +717,13 @@ document.addEventListener("DOMContentLoaded", () => {
     // ─── Render grid ───
     function renderMovies(movies) {
         resultsGrid.innerHTML = "";
-        if (!movies || !movies.length) { showError("No movies found. Try different filters."); return; }
+        if (!movies || !movies.length) {
+            showError("Nothing found", {
+                icon: "fa-filter",
+                action: { label: "Reset Filters", fn: () => document.getElementById("reset-filters")?.click() }
+            });
+            return;
+        }
         renderHero(movies);
         movies.forEach((m, i) => resultsGrid.appendChild(createCard(m, i, isTrendingMode && i < 10)));
         loadMoreWrap.style.display = movies.length >= 20 ? "flex" : "none";
@@ -757,7 +822,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 .then(d => {
                     resultsGrid.innerHTML = "";
                     const items = (d.movies || []).map(normalizeItem);
-                    if (!items.length) { showError(`No results for "${q}"`); return; }
+                    if (!items.length) {
+                        showError(`No results for "${q}"`, { icon: "fa-magnifying-glass" });
+                        return;
+                    }
                     items.forEach((m, i) => resultsGrid.appendChild(createCard(m, i)));
                     loadMoreWrap.style.display = "none";
                 })
@@ -1378,6 +1446,8 @@ document.addEventListener("DOMContentLoaded", () => {
         document.body.style.overflow = "";
         modalHistory.length = 0;
         updateModalBackBtn();
+        // Restore scroll position from before the modal opened
+        window.scrollTo({ top: _savedScroll, behavior: "instant" });
     }
 
     modalBackBtn.addEventListener("click", goModalBack);
@@ -1388,6 +1458,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function fetchMovieDetails(id) { fetchDetails(id, contentType); }
 
     function openActorPage(personId, name) {
+        _savedScroll = window.scrollY;
         pushModalState({ kind: "actor", id: personId, name });
         modalBody.innerHTML = `<div class="modal-loading"><div class="loader"></div></div>`;
         modal.style.display = "flex";
@@ -1568,6 +1639,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function fetchDetails(id, type, isAnime = false) {
+        _savedScroll = window.scrollY;
         pushModalState({ kind: "detail", id, type });
         modalBody.innerHTML = `<div class="modal-loading"><div class="loader"></div></div>`;
         modal.style.display = "flex";
