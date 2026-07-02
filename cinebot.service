@@ -1,0 +1,24 @@
+# systemd service — auto-starts CineBot on boot and restarts on crash
+# Install:
+#   sudo cp cinebot.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now cinebot
+
+[Unit]
+Description=CineBot Flask App
+After=network.target
+
+[Service]
+User=appuser
+Group=appuser
+WorkingDirectory=/home/appuser/cinebot
+EnvironmentFile=/home/appuser/cinebot/.env
+ExecStart=/home/appuser/cinebot/venv/bin/gunicorn -c gunicorn.conf.py wsgi:app
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cinebot
+
+[Install]
+WantedBy=multi-user.target

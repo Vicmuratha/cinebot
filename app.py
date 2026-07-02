@@ -1,53 +1,81 @@
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
+from flask_compress import Compress
 from services.tmdb_service import TMDBService
+import config
 
 app = Flask(__name__)
-# Enable Cross-Origin Resource Sharing
-CORS(app)
+app.secret_key = config.SECRET_KEY
 
-# Initialize our TMDB API wrapper
+# Gzip all text responses — typically 60-80% smaller
+Compress(app)
+
+# Restrict CORS to configured origins (set ALLOWED_ORIGINS env var)
+CORS(app, origins=config.ALLOWED_ORIGINS)
+
 tmdb_service = TMDBService()
 
+# ── Security headers on every response ───────────────────────────────────────
+@app.after_request
+def security_headers(response):
+    response.headers["X-Content-Type-Options"]  = "nosniff"
+    response.headers["X-Frame-Options"]         = "SAMEORIGIN"
+    response.headers["Referrer-Policy"]         = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"]      = "geolocation=(), microphone=(), camera=()"
+    # Cache static assets aggressively; don't cache API responses
+    if request.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "public, max-age=604800, immutable"
+    elif request.path.startswith("/") and request.method in ("GET", "HEAD") and not request.path.startswith("/static/"):
+        if response.content_type and "json" in response.content_type:
+            response.headers["Cache-Control"] = "no-store"
+    return response
+
+# ── Error handlers ────────────────────────────────────────────────────────────
+@app.errorhandler(404)
+def not_found(e):
+    if request.accept_mimetypes.accept_html:
+        return render_template("index.html"), 404
+    return jsonify({"error": "not found"}), 404
+
+@app.errorhandler(429)
+def too_many(e):
+    return jsonify({"error": "too many requests — slow down"}), 429
+
+@app.errorhandler(500)
+def server_error(e):
+    app.logger.error("500 error: %s", e)
+    return jsonify({"error": "internal server error"}), 500
+
+# ── Health check (used by load balancers and uptime monitors) ─────────────────
+@app.route("/health")
+def health():
+    return jsonify({"status": "ok"}), 200
+
+# ── Pages ─────────────────────────────────────────────────────────────────────
 @app.route("/")
 def index():
-    """Serve the index.html homepage."""
     return render_template("index.html")
 
+# ── Movie routes ──────────────────────────────────────────────────────────────
 @app.route("/genres", methods=["GET"])
 def get_genres():
-    """Return a list of available movie genres as JSON."""
-    genres = tmdb_service.get_genres()
-    return jsonify({"genres": genres}), 200
+    return jsonify({"genres": tmdb_service.get_genres()}), 200
 
 @app.route("/recommend", methods=["POST"])
 def recommend():
-    """
-    Accept user preferences (genre_id, year_from, year_to, sort_by)
-    and return a list of recommended movies as JSON.
-    """
-    # Parse incoming JSON payload
-    data = request.json or {}
-
-    # Extract filter parameters
-    genre_id = data.get("genre_id")
+    data      = request.json or {}
+    genre_id  = data.get("genre_id")
     year_from = data.get("year_from")
-    year_to = data.get("year_to")
-    sort_by = data.get("sort_by", "popularity.desc")
-    page = int(data.get("page", 1))
-
-    movies = tmdb_service.recommend(genre_id, year_from, year_to, sort_by, page)
-
+    year_to   = data.get("year_to")
+    sort_by   = data.get("sort_by", "popularity.desc")
+    page      = int(data.get("page", 1))
+    movies    = tmdb_service.recommend(genre_id, year_from, year_to, sort_by, page)
     return jsonify({"movies": movies}), 200
 
 @app.route("/search", methods=["GET"])
 def search():
-    """
-    Accept a query parameter 'q' and return search results as JSON.
-    """
-    query = request.args.get("q", "").strip()
+    query  = request.args.get("q", "").strip()
     movies = tmdb_service.search(query)
-
     return jsonify({"movies": movies}), 200
 
 @app.route("/trending", methods=["GET"])
@@ -56,8 +84,7 @@ def trending():
     page   = int(request.args.get("page", 1))
     if window not in ("day", "week"):
         window = "day"
-    movies = tmdb_service.trending(window, page)
-    return jsonify({"movies": movies}), 200
+    return jsonify({"movies": tmdb_service.trending(window, page)}), 200
 
 @app.route("/now-playing", methods=["GET"])
 def now_playing():
@@ -65,8 +92,7 @@ def now_playing():
 
 @app.route("/movie/<int:movie_id>/similar", methods=["GET"])
 def similar_movies(movie_id):
-    movies = tmdb_service.similar_movies(movie_id)
-    return jsonify({"movies": movies}), 200
+    return jsonify({"movies": tmdb_service.similar_movies(movie_id)}), 200
 
 @app.route("/movie/<int:movie_id>", methods=["GET"])
 def get_movie(movie_id):
@@ -75,21 +101,20 @@ def get_movie(movie_id):
         return jsonify(movie), 200
     return jsonify({"error": "Movie not found"}), 404
 
-# ── TV routes ────────────────────────────────────────────────────────────────
-
+# ── TV routes ─────────────────────────────────────────────────────────────────
 @app.route("/tv/genres", methods=["GET"])
 def get_tv_genres():
     return jsonify({"genres": tmdb_service.get_tv_genres()}), 200
 
 @app.route("/tv/recommend", methods=["POST"])
 def tv_recommend():
-    data     = request.json or {}
-    genre_id = data.get("genre_id")
+    data      = request.json or {}
+    genre_id  = data.get("genre_id")
     year_from = data.get("year_from")
     year_to   = data.get("year_to")
     sort_by   = data.get("sort_by", "popularity.desc")
     page      = int(data.get("page", 1))
-    shows = tmdb_service.discover_tv(genre_id, year_from, year_to, sort_by, page)
+    shows     = tmdb_service.discover_tv(genre_id, year_from, year_to, sort_by, page)
     return jsonify({"movies": shows}), 200
 
 @app.route("/tv/search", methods=["GET"])
@@ -130,6 +155,7 @@ def get_collection(collection_id):
         return jsonify(data), 200
     return jsonify({"error": "Collection not found"}), 404
 
+# ── Anime routes ──────────────────────────────────────────────────────────────
 @app.route("/anime/recommend", methods=["POST"])
 def anime_recommend():
     data      = request.json or {}
@@ -153,18 +179,7 @@ def anime_trending():
         window = "day"
     return jsonify({"movies": tmdb_service.trending_anime(window, page)}), 200
 
-@app.route("/download", methods=["GET"])
-def get_download():
-    tmdb_id  = request.args.get("tmdb_id", type=int)
-    item_type = request.args.get("type", "movie")
-    quality  = request.args.get("quality", "1080p")
-    season   = request.args.get("season", 1, type=int)
-    episode  = request.args.get("episode", 1, type=int)
-    if not tmdb_id:
-        return jsonify({"error": "tmdb_id required"}), 400
-    links = tmdb_service.get_download_links(tmdb_id, item_type, quality, season, episode)
-    return jsonify({"links": links}), 200
-
+# ── People ────────────────────────────────────────────────────────────────────
 @app.route("/person/<int:person_id>", methods=["GET"])
 def get_person(person_id):
     person = tmdb_service.get_person(person_id)
@@ -172,7 +187,18 @@ def get_person(person_id):
         return jsonify(person), 200
     return jsonify({"error": "Person not found"}), 404
 
+# ── Downloads ─────────────────────────────────────────────────────────────────
+@app.route("/download", methods=["GET"])
+def get_download():
+    tmdb_id   = request.args.get("tmdb_id", type=int)
+    item_type = request.args.get("type", "movie")
+    quality   = request.args.get("quality", "1080p")
+    season    = request.args.get("season", 1, type=int)
+    episode   = request.args.get("episode", 1, type=int)
+    if not tmdb_id:
+        return jsonify({"error": "tmdb_id required"}), 400
+    links = tmdb_service.get_download_links(tmdb_id, item_type, quality, season, episode)
+    return jsonify({"links": links}), 200
+
 if __name__ == "__main__":
-    import os
-    debug = os.environ.get("FLASK_DEBUG", "0") == "1"
-    app.run(host="0.0.0.0", port=5000, debug=debug, use_reloader=False)
+    app.run(host="0.0.0.0", port=5000, debug=config.DEBUG)
