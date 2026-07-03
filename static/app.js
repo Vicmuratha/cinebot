@@ -1328,16 +1328,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     playerFsBtn?.addEventListener("click", toggleFullscreen);
+    document.getElementById("video-fs-btn")?.addEventListener("click", toggleFullscreen);
 
     document.addEventListener("fullscreenchange", () => {
-        const icon = playerFsBtn?.querySelector("i");
-        if (!icon) return;
-        if (document.fullscreenElement) {
-            icon.className = "fa-solid fa-compress";
-            playerFsBtn.title = "Exit fullscreen (F)";
-        } else {
-            icon.className = "fa-solid fa-expand";
-            playerFsBtn.title = "Fullscreen (F)";
+        const isFs = !!document.fullscreenElement;
+        if (playerFsBtn) {
+            playerFsBtn.querySelector("i").className = isFs ? "fa-solid fa-compress" : "fa-solid fa-expand";
+            playerFsBtn.title = isFs ? "Exit fullscreen (F)" : "Fullscreen (F)";
+        }
+        const videoFsBtn = document.getElementById("video-fs-btn");
+        if (videoFsBtn) {
+            videoFsBtn.querySelector("i").className = isFs ? "fa-solid fa-compress" : "fa-solid fa-expand";
         }
     });
 
