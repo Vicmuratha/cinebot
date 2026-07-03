@@ -1355,6 +1355,30 @@ document.addEventListener("DOMContentLoaded", () => {
     // Double-click on the video area triggers fullscreen (most natural gesture)
     document.querySelector(".player-frame-wrap")?.addEventListener("dblclick", toggleFullscreen);
 
+    // ── Auto-hide controls (YouTube-style) ────────────────────────────────────
+    const playerShell = document.querySelector(".player-shell");
+    let _hideTimer = null;
+
+    function showControls() {
+        playerShell.classList.add("controls-visible");
+        playerShell.classList.remove("controls-hidden");
+        clearTimeout(_hideTimer);
+        _hideTimer = setTimeout(hideControls, 3000);
+    }
+    function hideControls() {
+        playerShell.classList.remove("controls-visible");
+        playerShell.classList.add("controls-hidden");
+    }
+
+    playerOverlay.addEventListener("mousemove", showControls);
+    playerOverlay.addEventListener("mouseenter", showControls);
+
+    // Keep controls visible while mouse is over them
+    document.querySelector(".player-header")?.addEventListener("mouseenter", () => clearTimeout(_hideTimer));
+    document.querySelector(".player-controls-bar")?.addEventListener("mouseenter", () => clearTimeout(_hideTimer));
+    document.querySelector(".player-header")?.addEventListener("mouseleave", showControls);
+    document.querySelector(".player-controls-bar")?.addEventListener("mouseleave", showControls);
+
     // ── PiP drag ──────────────────────────────────────────────────────────────
     const pipHeader = document.querySelector(".player-header");
     let pipDragging = false, pipDX = 0, pipDY = 0;

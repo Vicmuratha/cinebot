@@ -1020,11 +1020,13 @@ main { padding: 1.5rem 5% 5rem; max-width: 1700px; margin: 0 auto; }
     overflow: hidden;
     animation: fadeIn 0.2s ease;
 }
-/* Reveal floating controls on hover */
-.player-shell:hover .player-header,
-.player-shell:hover .player-controls-bar {
+/* Controls visible only when shell has .controls-visible (set by JS) */
+.player-shell.controls-visible .player-header,
+.player-shell.controls-visible .player-controls-bar {
     opacity: 1; pointer-events: auto;
 }
+.player-shell.controls-visible { cursor: default; }
+.player-shell.controls-hidden { cursor: none; }
 /* Frame-wrap fills the full shell since header/controls are now overlaid */
 .player-shell .player-frame-wrap {
     flex: 1; min-height: 0;
