@@ -1029,6 +1029,16 @@ main { padding: 1.5rem 5% 5rem; max-width: 1700px; margin: 0 auto; }
 .player-shell:-webkit-full-screen .player-frame-wrap {
     flex: 1; min-height: 0;
 }
+.player-shell:fullscreen .player-header,
+.player-shell:fullscreen .player-controls-bar,
+.player-shell:fullscreen .player-hint,
+.player-shell:fullscreen .player-status,
+.player-shell:-webkit-full-screen .player-header,
+.player-shell:-webkit-full-screen .player-controls-bar,
+.player-shell:-webkit-full-screen .player-hint,
+.player-shell:-webkit-full-screen .player-status {
+    display: none !important;
+}
 
 /* Slim top bar — title + icon buttons only */
 .player-header {
