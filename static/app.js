@@ -858,6 +858,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const playerIframe   = document.getElementById("player-iframe");
     const playerTitle    = document.getElementById("player-title");
     const playerClose    = document.getElementById("player-close");
+    const playerFsBtn    = document.getElementById("player-fullscreen");
     const playerPipBtn   = document.getElementById("player-pip");
     const playerQuality  = document.getElementById("player-quality");
     const playerHint     = document.getElementById("player-hint");
@@ -1311,6 +1312,34 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     playerPipBtn.addEventListener("click", () => { isPiP ? exitPiP() : enterPiP(); });
+
+    // ── Fullscreen ────────────────────────────────────────────────────────────
+    // Request fullscreen on the outer container — calling it on a cross-origin
+    // iframe is blocked by browsers, but the wrapper div works fine.
+    function toggleFullscreen() {
+        const el = document.querySelector(".player-shell");
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+            const req = el.requestFullscreen || el.webkitRequestFullscreen;
+            if (req) req.call(el);
+        } else {
+            const exit = document.exitFullscreen || document.webkitExitFullscreen;
+            if (exit) exit.call(document);
+        }
+    }
+
+    playerFsBtn?.addEventListener("click", toggleFullscreen);
+
+    document.addEventListener("fullscreenchange", () => {
+        const icon = playerFsBtn?.querySelector("i");
+        if (!icon) return;
+        if (document.fullscreenElement) {
+            icon.className = "fa-solid fa-compress";
+            playerFsBtn.title = "Exit fullscreen (F)";
+        } else {
+            icon.className = "fa-solid fa-expand";
+            playerFsBtn.title = "Fullscreen (F)";
+        }
+    });
 
     // ── PiP drag ──────────────────────────────────────────────────────────────
     const pipHeader = document.querySelector(".player-header");
@@ -2355,13 +2384,8 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // F — fullscreen the iframe
-        if (e.key === "f" || e.key === "F") {
-            const iframe = document.getElementById("player-iframe");
-            if (iframe.requestFullscreen) iframe.requestFullscreen();
-            else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
-            return;
-        }
+        // F — fullscreen toggle
+        if (e.key === "f" || e.key === "F") { toggleFullscreen(); return; }
     });
 
 });

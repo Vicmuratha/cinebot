@@ -2,10 +2,20 @@ from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
 from flask_compress import Compress
 from services.tmdb_service import TMDBService
-import config
+import subprocess, config
 
 app = Flask(__name__)
 app.secret_key = config.SECRET_KEY
+
+try:
+    _version = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"],
+                                        stderr=subprocess.DEVNULL).decode().strip()
+except Exception:
+    _version = "1"
+
+@app.context_processor
+def inject_version():
+    return {"v": _version}
 
 # Gzip all text responses — typically 60-80% smaller
 Compress(app)

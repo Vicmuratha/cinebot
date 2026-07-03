@@ -1020,6 +1020,15 @@ main { padding: 1.5rem 5% 5rem; max-width: 1700px; margin: 0 auto; }
     overflow: hidden;
     animation: fadeIn 0.2s ease;
 }
+.player-shell:fullscreen,
+.player-shell:-webkit-full-screen {
+    width: 100vw; height: 100vh;
+    background: #000;
+}
+.player-shell:fullscreen .player-frame-wrap,
+.player-shell:-webkit-full-screen .player-frame-wrap {
+    flex: 1; min-height: 0;
+}
 
 /* Slim top bar — title + icon buttons only */
 .player-header {
