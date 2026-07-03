@@ -1341,6 +1341,19 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // Bridge: intercept fullscreen requests that embed players send via postMessage
+    // and also catch cases where the iframe itself tries to go fullscreen.
+    window.addEventListener("message", e => {
+        if (!playerOverlay.classList.contains("open")) return;
+        const d = e.data;
+        if (!d) return;
+        const s = typeof d === "string" ? d : (d.type || d.event || d.action || "");
+        if (/full.?screen|fullscreen|fs_enter|enterFS/i.test(s)) toggleFullscreen();
+    });
+
+    // Double-click on the video area triggers fullscreen (most natural gesture)
+    document.querySelector(".player-frame-wrap")?.addEventListener("dblclick", toggleFullscreen);
+
     // ── PiP drag ──────────────────────────────────────────────────────────────
     const pipHeader = document.querySelector(".player-header");
     let pipDragging = false, pipDX = 0, pipDY = 0;

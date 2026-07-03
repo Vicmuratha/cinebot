@@ -251,8 +251,8 @@
             <!-- Video — fills all remaining height -->
             <div class="player-frame-wrap">
                 <iframe id="player-iframe" class="player-iframe"
-                    allowfullscreen
-                    allow="autoplay; fullscreen; picture-in-picture; encrypted-media; accelerometer; gyroscope"
+                    allowfullscreen mozallowfullscreen webkitallowfullscreen
+                    allow="autoplay; fullscreen *; picture-in-picture; encrypted-media; accelerometer; gyroscope"
                     src=""></iframe>
                 <div id="player-subtitles" class="player-subtitles"></div>
                 <div id="player-sub-controls" class="player-sub-controls" style="display:none;">
