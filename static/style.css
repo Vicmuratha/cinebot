@@ -612,15 +612,15 @@ main { padding: 1.5rem 5% 5rem; max-width: 1700px; margin: 0 auto; }
 
 .modal-content {
     background: var(--surface); width: 100%; max-width: 880px;
-    position: relative; max-height: 90vh; border-radius: 18px;
+    position: relative;
+    height: 90vh; max-height: 90vh;
+    border-radius: 18px;
     box-shadow:
         0 0 0 1px rgba(245,158,11,0.1),
         0 50px 120px rgba(0,0,0,0.85);
     border: 1px solid var(--border);
     animation: modalIn 0.24s var(--ease);
     display: flex; flex-direction: column; overflow: hidden;
-}
-    box-shadow: 0 0 0 1px var(--border), 0 40px 80px rgba(0,0,0,0.12);
 }
 
 #modal-body {
@@ -663,7 +663,7 @@ main { padding: 1.5rem 5% 5rem; max-width: 1700px; margin: 0 auto; }
 }
 
 /* Modal inner layout */
-.modal-inner { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+.modal-inner { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
 
 .modal-banner {
     position: relative; flex-shrink: 0; height: 230px;
@@ -685,6 +685,7 @@ main { padding: 1.5rem 5% 5rem; max-width: 1700px; margin: 0 auto; }
 
 .modal-scroll {
     flex: 1; overflow-y: auto; min-height: 0;
+    -webkit-overflow-scrolling: touch;
     scrollbar-width: thin; scrollbar-color: var(--border) transparent;
 }
 .modal-scroll::-webkit-scrollbar { width: 4px; }
