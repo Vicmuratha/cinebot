@@ -13,6 +13,20 @@ document.addEventListener("DOMContentLoaded", () => {
         return d;
     }
 
+    // ─── Image helper — swaps broken images to a styled placeholder ───
+    function imgWithFallback(src, alt, className, phClass = "card-no-poster", icon = "fa-film") {
+        const img = document.createElement("img");
+        img.className = className;
+        img.src = src; img.alt = alt || "";
+        img.onerror = () => {
+            const ph = document.createElement("div");
+            ph.className = phClass;
+            ph.innerHTML = `<i class="fa-solid ${icon}"></i>`;
+            img.replaceWith(ph);
+        };
+        return img;
+    }
+
     // ─── State ───
     let heroMovieId     = null;
     let heroTitle       = null;
@@ -142,9 +156,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     const item = document.createElement("div");
                     item.className = "np-card";
                     if (m.poster_path) {
-                        const img = document.createElement("img");
-                        img.src = `https://image.tmdb.org/t/p/w185${m.poster_path}`;
-                        img.alt = m.title || ""; img.loading = "lazy";
+                        const img = imgWithFallback(`https://image.tmdb.org/t/p/w185${m.poster_path}`, m.title, "");
+                        img.loading = "lazy";
                         item.appendChild(img);
                     } else {
                         const ph = document.createElement("div");
@@ -182,8 +195,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const card = document.createElement("div");
             card.className = "continue-card";
             if (h.backdrop) {
-                const img = document.createElement("img");
-                img.src = h.backdrop; img.alt = h.title; img.loading = "lazy";
+                const img = imgWithFallback(h.backdrop, h.title, "", "continue-card-ph", "fa-film");
+                img.loading = "lazy";
                 card.appendChild(img);
             } else {
                 const ph = document.createElement("div");
@@ -625,16 +638,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (poster) {
-            const img = document.createElement("img");
-            img.className = "card-poster";
-            img.src = poster; img.alt = movie.title;
+            const img = imgWithFallback(poster, movie.title, "card-poster");
             img.loading = index < 8 ? "eager" : "lazy";
             img.decoding = "async";
             imgWrap.appendChild(img);
         } else {
             const ph = document.createElement("div");
             ph.className = "card-no-poster";
-            ph.textContent = "No Poster";
+            ph.innerHTML = '<i class="fa-solid fa-film"></i>';
             imgWrap.appendChild(ph);
         }
 
@@ -1652,10 +1663,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         const card = document.createElement("div");
                         card.className = "actor-film-card-v2";
                         if (c.poster_path) {
-                            const img = document.createElement("img");
-                            img.className = "film-poster";
-                            img.src = `https://image.tmdb.org/t/p/w185${c.poster_path}`;
-                            img.alt = c.title || c.name;
+                            const img = imgWithFallback(`https://image.tmdb.org/t/p/w185${c.poster_path}`, c.title || c.name, "film-poster", "film-ph", "fa-film");
                             img.loading = "lazy";
                             card.appendChild(img);
                         } else {
@@ -1778,8 +1786,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const banner = document.createElement("div");
             banner.className = "modal-banner";
             if (backdrop) {
-                const img = document.createElement("img");
-                img.className = "modal-banner-img"; img.src = backdrop; img.alt = "";
+                const img = imgWithFallback(backdrop, "", "modal-banner-img", "modal-banner-ph");
                 banner.appendChild(img);
             } else {
                 const ph = document.createElement("div");
@@ -2191,10 +2198,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     const c = document.createElement("button");
                     c.className = "cast-member";
                     if (a.profile_path) {
-                        const img = document.createElement("img");
-                        img.src = `https://image.tmdb.org/t/p/w185${a.profile_path}`;
-                        img.alt = a.name; img.loading = "lazy";
-                        img.className = "cast-avatar";
+                        const img = imgWithFallback(`https://image.tmdb.org/t/p/w185${a.profile_path}`, a.name, "cast-avatar", "cast-avatar cast-avatar-ph", "fa-user");
+                        img.loading = "lazy";
                         c.appendChild(img);
                     } else {
                         const av = document.createElement("div");
@@ -2245,9 +2250,8 @@ document.addEventListener("DOMContentLoaded", () => {
                                 const thumb = document.createElement("div");
                                 thumb.className = "ep-thumb";
                                 if (ep.still_path) {
-                                    const img = document.createElement("img");
-                                    img.src = `https://image.tmdb.org/t/p/w185${ep.still_path}`;
-                                    img.alt = ""; img.loading = "lazy";
+                                    const img = imgWithFallback(`https://image.tmdb.org/t/p/w185${ep.still_path}`, "", "", "ep-thumb-ph", "fa-film");
+                                    img.loading = "lazy";
                                     thumb.appendChild(img);
                                 } else {
                                     thumb.innerHTML = '<i class="fa-solid fa-film"></i>';
@@ -2306,9 +2310,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     const card = document.createElement("div");
                     card.className = "similar-card";
                     if (m.poster_path) {
-                        const img = document.createElement("img");
-                        img.src = `https://image.tmdb.org/t/p/w185${m.poster_path}`;
-                        img.alt = m.title; img.loading = "lazy";
+                        const img = imgWithFallback(`https://image.tmdb.org/t/p/w185${m.poster_path}`, m.title, "", "similar-card-placeholder", "fa-film");
+                        img.loading = "lazy";
                         card.appendChild(img);
                     } else {
                         const ph = document.createElement("div");
@@ -2336,9 +2339,8 @@ document.addEventListener("DOMContentLoaded", () => {
                             const card = document.createElement("div");
                             card.className = "similar-card";
                             if (p.poster_path) {
-                                const img = document.createElement("img");
-                                img.src = `https://image.tmdb.org/t/p/w185${p.poster_path}`;
-                                img.alt = p.title; img.loading = "lazy";
+                                const img = imgWithFallback(`https://image.tmdb.org/t/p/w185${p.poster_path}`, p.title, "", "similar-card-placeholder", "fa-film");
+                                img.loading = "lazy";
                                 card.appendChild(img);
                             } else {
                                 const ph = document.createElement("div");
