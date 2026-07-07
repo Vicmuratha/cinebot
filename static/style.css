@@ -1002,6 +1002,21 @@ main { padding: 1.5rem 5% 5rem; max-width: 1700px; margin: 0 auto; }
 }
 .player-overlay.open { display: flex; animation: fadeIn 0.2s ease; }
 
+/* ── Theatre mode — large centered panel, page faintly visible behind ── */
+.player-overlay.theatre-mode {
+    background: rgba(0, 0, 0, 0.88);
+    align-items: center; justify-content: center;
+    padding: 2vh 2vw;
+}
+.player-overlay.theatre-mode .player-shell {
+    width: min(96vw, 1400px);
+    height: min(90vh, 900px);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(245,158,11,0.15), 0 40px 120px rgba(0,0,0,0.9);
+}
+.player-overlay.theatre-mode .player-bg { display: none; }
+
 /* Blurred backdrop (very dim — video is the focus) */
 .player-bg {
     position: absolute; inset: 0; z-index: 0;
