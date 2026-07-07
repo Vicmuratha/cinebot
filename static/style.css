@@ -15,6 +15,7 @@
     --skel-shine:  #261f18;
     --radius:      12px;
     --ease:        cubic-bezier(0.16, 1, 0.3, 1);
+    --text-dim:    #6b5e4e;
 }
 
 
@@ -80,8 +81,6 @@ body.no-hero header { background: var(--bg); border-bottom-color: var(--border);
     color: var(--text); font-family: inherit; font-size: 0.82rem;
     border-radius: 100px;
     transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
-}
-    background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.1);
 }
 .search-container input::placeholder { color: var(--muted); }
 .search-container input:focus {
@@ -1089,34 +1088,7 @@ main { padding: 1.5rem 5% 5rem; max-width: 1700px; margin: 0 auto; }
     white-space: nowrap; display: flex; align-items: center; gap: 0.4rem;
 }
 
-/* Server tab buttons */
-.player-sources {
-    display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
-    background: none; border: none; border-radius: 0; padding: 0;
-}
-.player-src-btn {
-    display: inline-flex; align-items: center; gap: 0.4rem;
-    padding: 0.45rem 1.05rem;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 7px;
-    color: rgba(255,255,255,0.55);
-    font-size: 0.78rem; font-weight: 600;
-    cursor: pointer; font-family: inherit;
-    transition: background 0.15s, color 0.15s, border-color 0.15s;
-}
-.player-src-btn i { font-size: 0.7rem; }
-.player-src-btn:hover {
-    background: rgba(255,255,255,0.1);
-    color: rgba(255,255,255,0.9);
-    border-color: rgba(255,255,255,0.2);
-}
-.player-src-btn.active {
-    background: var(--accent); color: #000;
-    border-color: var(--accent); font-weight: 700;
-    box-shadow: 0 0 16px rgba(245,158,11,0.3);
-}
-.player-src-btn.active i { color: #000; }
+/* Server tab buttons — see pill-style block below */
 
 /* Episode picker (in controls bar, TV only) */
 .player-ep-picker {
@@ -1665,7 +1637,8 @@ main { padding: 1.5rem 5% 5rem; max-width: 1700px; margin: 0 auto; }
 
     /* Bigger tap targets on cards */
     .card-play-btn { width: 44px; height: 44px; font-size: 0.9rem; }
-    .heart-btn { width: 30px; height: 30px; font-size: 0.72rem; }
+    .heart-btn { width: 44px; height: 44px; font-size: 0.85rem; }
+    .search-clear { width: 44px; height: 44px; font-size: 0.9rem; right: 0.3rem; }
 
     /* Hero tighter */
     .hero-title { font-size: 1.55rem; }

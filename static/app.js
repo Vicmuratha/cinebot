@@ -443,9 +443,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ─── Reset ───
     document.getElementById("reset-filters").addEventListener("click", () => {
-        filters = { genre_id: "", year_from: "1990", year_to: "2026", sort_by: "popularity.desc" };
-        yearFrom.value = "1990"; yearTo.value = "2026";
-        yearFromVal.textContent = "1990"; yearToVal.textContent = "2026";
+        filters = { genre_id: "", year_from: "1990", year_to: String(THIS_YEAR), sort_by: "popularity.desc" };
+        yearFrom.value = "1990"; yearTo.value = String(THIS_YEAR);
+        yearFromVal.textContent = "1990"; yearToVal.textContent = String(THIS_YEAR);
         document.querySelectorAll(".genre-pill").forEach(p => p.classList.toggle("active", p.dataset.id === ""));
         document.querySelectorAll(".sort-tab").forEach(t => t.classList.toggle("active", t.dataset.sort === "popularity.desc"));
         searchInput.value = "";
@@ -820,8 +820,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const q = e.target.value.trim();
         searchTimer = setTimeout(() => {
             if (!q) { isSearchMode = false; isWatchlistMode = false; hideSuggestions(); fetchRecommendations(); return; }
+            if (q.length < 2) return;
             hideSuggestions();
-            saveRecentSearch(q);
             isSearchMode    = true;
             isWatchlistMode = false;
             setHero(false);
@@ -837,6 +837,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         showError(`No results for "${q}"`, { icon: "fa-magnifying-glass" });
                         return;
                     }
+                    saveRecentSearch(q);
                     items.forEach((m, i) => resultsGrid.appendChild(createCard(m, i)));
                     loadMoreWrap.style.display = "none";
                 })
@@ -1538,9 +1539,8 @@ document.addEventListener("DOMContentLoaded", () => {
     modalBackBtn.addEventListener("click", goModalBack);
     closeBtn.addEventListener("click", closeModal);
     modal.addEventListener("click", e => { if (e.target === modal) closeModal(); });
-    window.addEventListener("keydown", e => { if (e.key === "Escape" && !playerOverlay.classList.contains("open")) closeModal(); });
+    window.addEventListener("keydown", e => { if (e.key === "Escape" && !playerOverlay.classList.contains("open")) { if (modal.style.display !== "none" && modal.style.display !== "") closeModal(); } });
 
-    function fetchMovieDetails(id) { fetchDetails(id, contentType); }
 
     function openActorPage(personId, name) {
         _savedScroll = window.scrollY;
@@ -2156,7 +2156,6 @@ document.addEventListener("DOMContentLoaded", () => {
                                 }
                             }
                         } catch (err) {
-                            console.error("[DL]", err);
                             overlay.remove();
                             showToast("No torrent found — try a different quality or check your connection");
                         }
