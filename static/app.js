@@ -1343,7 +1343,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.addEventListener("fullscreenchange", () => {
         const isFs = !!document.fullscreenElement;
-        if (isFs) { clearTimeout(_hideTimer); hideControls(); }
+        if (isFs) {
+            clearTimeout(_hideTimer);
+            hideControls();
+            playerHint.style.display = "none";
+            playerStatusEl.style.display = "none";
+        }
         if (playerFsBtn) {
             playerFsBtn.querySelector("i").className = isFs ? "fa-solid fa-compress" : "fa-solid fa-expand";
             playerFsBtn.title = isFs ? "Exit fullscreen (F)" : "Fullscreen (F)";
