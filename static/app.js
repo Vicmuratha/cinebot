@@ -1343,6 +1343,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.addEventListener("fullscreenchange", () => {
         const isFs = !!document.fullscreenElement;
+        if (isFs) { clearTimeout(_hideTimer); hideControls(); }
         if (playerFsBtn) {
             playerFsBtn.querySelector("i").className = isFs ? "fa-solid fa-compress" : "fa-solid fa-expand";
             playerFsBtn.title = isFs ? "Exit fullscreen (F)" : "Fullscreen (F)";
@@ -1371,6 +1372,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let _hideTimer = null;
 
     function showControls() {
+        if (document.fullscreenElement || document.webkitFullscreenElement) return;
         playerShell.classList.add("controls-visible");
         playerShell.classList.remove("controls-hidden");
         clearTimeout(_hideTimer);
