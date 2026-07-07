@@ -870,9 +870,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const playerIframe   = document.getElementById("player-iframe");
     const playerTitle    = document.getElementById("player-title");
     const playerClose    = document.getElementById("player-close");
-    const playerFsBtn      = document.getElementById("player-fullscreen");
-    const playerTheatreBtn = document.getElementById("player-theatre");
-    const playerPipBtn     = document.getElementById("player-pip");
+    const playerFsBtn  = document.getElementById("player-fullscreen");
+    const playerPipBtn = document.getElementById("player-pip");
     const playerQuality  = document.getElementById("player-quality");
     const playerHint     = document.getElementById("player-hint");
     const playerEpPicker = document.getElementById("player-ep-picker");
@@ -1292,7 +1291,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
         exitPiP();
-        exitTheatre();
         clearSubs();
         playerOverlay.classList.remove("open");
         playerIframe.src = "";
@@ -1326,30 +1324,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     playerPipBtn.addEventListener("click", () => { isPiP ? exitPiP() : enterPiP(); });
-
-    // ── Theatre mode ──────────────────────────────────────────────────────────
-    let isTheatre = false;
-
-    function enterTheatre() {
-        isTheatre = true;
-        if (isPiP) exitPiP();
-        playerOverlay.classList.add("theatre-mode");
-        playerTheatreBtn.querySelector("i").className = "fa-solid fa-compress-alt";
-        playerTheatreBtn.title = "Exit theatre mode (T)";
-    }
-    function exitTheatre() {
-        isTheatre = false;
-        playerOverlay.classList.remove("theatre-mode");
-        playerTheatreBtn.querySelector("i").className = "fa-solid fa-clapperboard";
-        playerTheatreBtn.title = "Theatre mode (T)";
-    }
-
-    playerTheatreBtn?.addEventListener("click", () => { isTheatre ? exitTheatre() : enterTheatre(); });
-
-    // Click on the dim overlay (outside the shell) exits theatre mode
-    playerOverlay.addEventListener("click", e => {
-        if (isTheatre && e.target === playerOverlay) exitTheatre();
-    });
 
     // ── Fullscreen ────────────────────────────────────────────────────────────
     // Request fullscreen on the outer container — calling it on a cross-origin
@@ -2456,10 +2430,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // T — theatre mode toggle
-        if (e.key === "t" || e.key === "T") { isTheatre ? exitTheatre() : enterTheatre(); return; }
-
-        // F — fullscreen toggle
+// F — fullscreen toggle
         if (e.key === "f" || e.key === "F") { toggleFullscreen(); return; }
     });
 
