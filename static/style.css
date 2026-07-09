@@ -251,7 +251,7 @@ body.no-hero header { background: var(--bg); border-bottom-color: var(--border);
     padding: 0.3rem 0.85rem;
     font-family: inherit; font-size: 0.71rem; font-weight: 600;
     color: var(--muted); cursor: pointer;
-    transition: background 0.18s, color 0.18s;
+    transition: background 0.25s var(--ease), color 0.25s var(--ease), box-shadow 0.25s var(--ease);
     white-space: nowrap;
 }
 .type-btn i { font-size: 0.63rem; }
@@ -276,7 +276,7 @@ body.no-hero header { background: var(--bg); border-bottom-color: var(--border);
     padding: 0.5rem 0.9rem;
     font-family: inherit; font-size: 0.78rem; font-weight: 600;
     color: var(--muted); cursor: pointer;
-    transition: color 0.18s, border-color 0.18s; white-space: nowrap;
+    transition: color 0.25s var(--ease), border-color 0.25s var(--ease); white-space: nowrap;
 }
 .sort-tab i { font-size: 0.65rem; }
 .sort-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
@@ -322,9 +322,10 @@ body.no-hero header { background: var(--bg); border-bottom-color: var(--border);
     padding: 3px 13px; border-radius: 100px;
     font-size: 0.7rem; font-weight: 500; cursor: pointer;
     color: var(--muted); font-family: inherit;
-    transition: all 0.2s; white-space: nowrap;
+    transition: background 0.25s var(--ease), border-color 0.25s var(--ease), color 0.25s var(--ease), transform 0.2s var(--ease);
+    white-space: nowrap;
 }
-.genre-pill:hover:not(.active) { border-color: var(--text); color: var(--text); }
+.genre-pill:hover:not(.active) { border-color: var(--text); color: var(--text); transform: translateY(-1px); }
 .genre-pill.active { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 700; }
 .my-list-pill i { margin-right: 3px; font-size: 0.6rem; }
 
@@ -348,9 +349,10 @@ body.no-hero header { background: var(--bg); border-bottom-color: var(--border);
 .np-card {
     flex: 0 0 90px; cursor: pointer;
     display: flex; flex-direction: column; gap: 0.35rem;
-    transition: transform 0.2s var(--ease);
+    transition: transform 0.35s var(--ease);
+    will-change: transform;
 }
-.np-card:hover { transform: translateY(-3px); }
+.np-card:hover { transform: translateY(-5px); }
 .np-card img, .np-card-ph {
     width: 90px; height: 135px; border-radius: 8px;
     object-fit: cover; background: var(--surface2);
@@ -394,10 +396,11 @@ body.no-hero header { background: var(--bg); border-bottom-color: var(--border);
 .continue-card {
     flex-shrink: 0; width: 140px; cursor: pointer;
     position: relative; border-radius: 8px; overflow: hidden;
-    transition: transform 0.2s var(--ease);
+    transition: transform 0.35s var(--ease), box-shadow 0.35s var(--ease);
     background: var(--surface);
+    will-change: transform;
 }
-.continue-card:hover { transform: translateY(-4px); }
+.continue-card:hover { transform: translateY(-6px); box-shadow: 0 12px 30px rgba(0,0,0,0.6); }
 .continue-card img {
     width: 140px; height: 79px; object-fit: cover; display: block;
     background: var(--skel-base);
@@ -434,8 +437,8 @@ main { padding: 1.5rem 5% 5rem; max-width: 1700px; margin: 0 auto; }
 
 /* ─── Animations ─── */
 @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(22px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateY(28px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0)    scale(1); }
 }
 
 /* ─── Movie Cards ─── */
@@ -460,13 +463,14 @@ main { padding: 1.5rem 5% 5rem; max-width: 1700px; margin: 0 auto; }
     position: relative; cursor: pointer;
     border-radius: var(--radius); overflow: hidden;
     aspect-ratio: 2 / 3; background: var(--surface);
-    opacity: 0; animation: fadeUp 0.4s ease forwards;
-    transition: transform 0.32s var(--ease), box-shadow 0.32s ease;
+    opacity: 0; animation: fadeUp 0.55s var(--ease) forwards;
+    transition: transform 0.4s var(--ease), box-shadow 0.4s var(--ease);
     box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    will-change: transform;
 }
 .movie-card:hover {
-    transform: translateY(-6px) scale(1.02);
-    box-shadow: 0 16px 50px rgba(0,0,0,0.75), 0 0 0 1px rgba(245,158,11,0.2);
+    transform: translateY(-8px) scale(1.03);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(245,158,11,0.25);
 }
 
 /* Image wrapper fills the whole card */
@@ -477,9 +481,10 @@ main { padding: 1.5rem 5% 5rem; max-width: 1700px; margin: 0 auto; }
 .card-poster {
     position: absolute; inset: 0; width: 100%; height: 100%;
     object-fit: cover; display: block;
-    transition: transform 0.45s ease;
+    transition: transform 0.6s var(--ease);
+    will-change: transform;
 }
-.movie-card:hover .card-poster { transform: scale(1.06); }
+.movie-card:hover .card-poster { transform: scale(1.08); }
 
 .card-no-poster {
     position: absolute; inset: 0;
@@ -586,7 +591,9 @@ main { padding: 1.5rem 5% 5rem; max-width: 1700px; margin: 0 auto; }
     border-color: var(--text); color: var(--text);
 }
 .load-more-btn.loading { pointer-events: none; }
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin    { to { transform: rotate(360deg); } }
+@keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 .load-more-btn.loading i { display: inline-block; animation: spin 0.8s linear infinite; }
 
 /* ─── Empty States ─── */
@@ -599,8 +606,8 @@ main { padding: 1.5rem 5% 5rem; max-width: 1700px; margin: 0 auto; }
 
 /* ─── Modal ─── */
 @keyframes modalIn {
-    from { opacity: 0; transform: scale(0.96) translateY(18px); }
-    to   { opacity: 1; transform: scale(1) translateY(0); }
+    from { opacity: 0; transform: scale(0.94) translateY(24px); }
+    to   { opacity: 1; transform: scale(1)    translateY(0); }
 }
 .modal {
     display: none; position: fixed; inset: 0; z-index: 2000;
@@ -618,7 +625,7 @@ main { padding: 1.5rem 5% 5rem; max-width: 1700px; margin: 0 auto; }
         0 0 0 1px rgba(245,158,11,0.1),
         0 50px 120px rgba(0,0,0,0.85);
     border: 1px solid var(--border);
-    animation: modalIn 0.24s var(--ease);
+    animation: modalIn 0.38s var(--ease);
     display: flex; flex-direction: column; overflow: hidden;
 }
 
@@ -685,6 +692,7 @@ main { padding: 1.5rem 5% 5rem; max-width: 1700px; margin: 0 auto; }
 .modal-scroll {
     flex: 1; overflow-y: auto; min-height: 0;
     -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
     scrollbar-width: thin; scrollbar-color: var(--border) transparent;
 }
 .modal-scroll::-webkit-scrollbar { width: 4px; }
@@ -951,15 +959,15 @@ main { padding: 1.5rem 5% 5rem; max-width: 1700px; margin: 0 auto; }
     z-index: 9999; display: flex; flex-direction: column;
     gap: 0.5rem; pointer-events: none; align-items: center;
 }
-@keyframes toastIn  { from { opacity: 0; transform: translateY(10px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
-@keyframes toastOut { to   { opacity: 0; transform: translateY(-4px) scale(0.96); } }
+@keyframes toastIn  { from { opacity: 0; transform: translateY(16px) scale(0.94); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes toastOut { to   { opacity: 0; transform: translateY(-6px) scale(0.94); } }
 .toast {
     background: rgba(245,158,11,0.12);
     backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
     color: var(--text); padding: 0.55rem 1.25rem;
     border-radius: 100px; font-size: 0.79rem; font-weight: 500;
     border: 1px solid rgba(245,158,11,0.25);
-    animation: toastIn 0.22s ease;
+    animation: toastIn 0.35s var(--ease);
     box-shadow: 0 4px 24px rgba(0,0,0,0.4); white-space: nowrap;
 }
 
@@ -970,7 +978,7 @@ main { padding: 1.5rem 5% 5rem; max-width: 1700px; margin: 0 auto; }
     backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
     align-items: center; justify-content: center; padding: 1.5rem;
 }
-.trailer-modal.open { display: flex; animation: fadeIn 0.22s ease; }
+.trailer-modal.open { display: flex; animation: fadeIn 0.3s ease-out; }
 .trailer-shell {
     position: relative; width: 100%; max-width: 900px;
     border-radius: 14px; overflow: hidden;
@@ -1000,7 +1008,7 @@ main { padding: 1.5rem 5% 5rem; max-width: 1700px; margin: 0 auto; }
     display: none; position: fixed; inset: 0; z-index: 9000;
     background: #0a0a0a;
 }
-.player-overlay.open { display: flex; animation: fadeIn 0.2s ease; }
+.player-overlay.open { display: flex; animation: fadeIn 0.3s ease-out; }
 
 
 /* Blurred backdrop (very dim — video is the focus) */
@@ -1019,7 +1027,7 @@ main { padding: 1.5rem 5% 5rem; max-width: 1700px; margin: 0 auto; }
     display: flex; flex-direction: column;
     background: #0d0d0d;
     overflow: hidden;
-    animation: fadeIn 0.2s ease;
+    animation: fadeIn 0.35s ease-out;
 }
 /* Controls visible only when shell has .controls-visible (set by JS) */
 .player-shell.controls-visible .player-header,
@@ -1056,7 +1064,7 @@ main { padding: 1.5rem 5% 5rem; max-width: 1700px; margin: 0 auto; }
     flex-shrink: 0; min-height: 50px;
     position: absolute; top: 0; left: 0; right: 0; z-index: 40;
     opacity: 0; pointer-events: none;
-    transition: opacity 0.25s;
+    transition: opacity 0.4s ease;
 }
 
 .player-header-left {
@@ -1078,7 +1086,7 @@ main { padding: 1.5rem 5% 5rem; max-width: 1700px; margin: 0 auto; }
     background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, transparent 100%);
     position: absolute; bottom: 0; left: 0; right: 0; z-index: 40;
     opacity: 0; pointer-events: none;
-    transition: opacity 0.25s;
+    transition: opacity 0.4s ease;
 }
 .player-controls-left {
     display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
@@ -1895,13 +1903,13 @@ main { padding: 1.5rem 5% 5rem; max-width: 1700px; margin: 0 auto; }
     background: none; border: none; cursor: pointer;
     font-family: inherit; font-size: 0.6rem; font-weight: 600;
     letter-spacing: 0.03em; color: var(--muted);
-    transition: color 0.15s; text-transform: uppercase;
+    transition: color 0.25s var(--ease); text-transform: uppercase;
     -webkit-tap-highlight-color: transparent;
 }
-.mbn-tab i { font-size: 1.15rem; transition: transform 0.18s var(--ease); }
+.mbn-tab i { font-size: 1.15rem; transition: transform 0.3s var(--ease); }
 .mbn-tab.active { color: var(--accent); }
-.mbn-tab.active i { transform: translateY(-2px); }
-.mbn-tab:active i { transform: scale(0.88); }
+.mbn-tab.active i { transform: translateY(-3px) scale(1.1); }
+.mbn-tab:active i { transform: scale(0.82); }
 
 @media (max-width: 768px) {
     .mobile-bottom-nav { display: grid; }
